@@ -148,9 +148,17 @@
             transition: width 0.3s ease-in-out;
             box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.2);
         }
-        .hp-bar .progress-bar {
-            background: linear-gradient(to right, #fc8181, #e53e3e); /* Red gradient for HP */
+        /* HP Bar Colors */
+        .hp-bar .progress-bar.green-hp {
+            background: linear-gradient(to right, #48bb78, #38a169); /* Green */
         }
+        .hp-bar .progress-bar.yellow-hp {
+            background: linear-gradient(to right, #f6e05e, #d69e2e); /* Yellow */
+        }
+        .hp-bar .progress-bar.red-hp {
+            background: linear-gradient(to right, #fc8181, #e53e3e); /* Red */
+        }
+
         .shop-items, .hire-options, .main-menu-options, .equipped-items-list {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -219,7 +227,35 @@
             color: #ffeb3b; /* Gold on hover */
         }
 
-        /* Shake animation for critical hits */
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 1.5rem;
+                gap: 1rem;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .section-title {
+                font-size: 1.4rem;
+            }
+            .btn {
+                padding: 0.7rem 1.2rem;
+                font-size: 0.9rem;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr; /* Stack stats on small screens */
+            }
+            .shop-items, .hire-options, .main-menu-options, .equipped-items-list {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Smaller grid items */
+                gap: 0.75rem;
+            }
+            .modal-content {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Animations */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
@@ -230,6 +266,72 @@
             transform: translate3d(0, 0, 0);
             backface-visibility: hidden;
             perspective: 1000px;
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .flash {
+            animation: flash 0.2s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .slide-in {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        .explode {
+            animation: explode 0.5s forwards;
+        }
+
+        /* Victory Animation */
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #ffeb3b; /* Gold */
+            border-radius: 50%;
+            animation: confetti-fall 3s ease-in-out forwards;
+            opacity: 0;
+        }
+        .confetti:nth-child(2n) { background-color: #63b3ed; } /* Blue */
+        .confetti:nth-child(3n) { background-color: #48bb78; } /* Green */
+        .confetti:nth-child(4n) { background-color: #e53e3e; } /* Red */
+        .confetti:nth-child(5n) { background-color: #a7d9ff; } /* Light Blue */
+
+        /* Specific styles for monster abilities */
+        .shield-active {
+            border: 3px solid #63b3ed; /* Blue border for shield */
+            box-shadow: 0 0 15px rgba(99, 179, 237, 0.7);
+        }
+        .debuff-active {
+            filter: grayscale(80%); /* Grey out player stats to show debuff */
+        }
+        .immunity-active {
+            border: 3px solid #ffeb3b; /* Gold border for immunity */
+            box-shadow: 0 0 15px rgba(255, 235, 59, 0.7);
         }
     </style>
 </head>
@@ -244,7 +346,7 @@
                 <button class="btn btn-primary flex-col p-4" onclick="selectOccupation('Warrior')">
                     <span class="text-3xl">🛡️</span>
                     <span class="mt-2 text-lg">Warrior</span>
-                    <span class="text-sm text-gray-200">High HP, Good Defense</span>
+                    <span class="text-sm text-gray-200">High HP, Good Defence</span>
                 </button>
                 <button class="btn btn-primary flex-col p-4" onclick="selectOccupation('Mage')">
                     <span class="text-3xl">🔮</span>
@@ -264,13 +366,13 @@
             <div class="message-box" id="game-message">Welcome, adventurer!</div>
 
             <!-- Player Stats -->
-            <div class="bg-gray-700 p-4 rounded-xl shadow-inner">
+            <div class="bg-gray-700 p-4 rounded-xl shadow-inner" id="player-stats-display">
                 <h3 class="text-xl font-semibold mb-2 text-yellow-300">Your Hero</h3>
                 <div class="stats-grid">
                     <span>Occupation: <span id="player-occupation"></span></span>
                     <span>Level: <span id="player-level"></span></span>
                     <span>Attack: <span id="player-attack"></span></span>
-                    <span>Defense: <span id="player-defense"></span></span>
+                    <span>Defence: <span id="player-defence"></span></span>
                     <span>Coins: <span id="player-coins"></span></span>
                     <span>Potions: <span id="player-potions"></span></span>
                     <span>Equipment: <span id="player-equipment">None</span></span>
@@ -295,7 +397,7 @@
                 <h3 class="text-xl font-semibold mb-2 text-red-400">Enemy: <span id="enemy-icon"></span> <span id="enemy-name"></span></h3>
                 <div class="stats-grid">
                     <span>Attack: <span id="enemy-attack"></span></span>
-                    <span>Defense: <span id="enemy-defense"></span></span>
+                    <span>Defence: <span id="enemy-defence"></span></span>
                 </div>
                 <div class="mt-4">
                     <div class="text-sm font-medium mb-1">HP: <span id="enemy-hp-text"></span></div>
@@ -306,7 +408,7 @@
             </div>
 
             <!-- Main Menu Actions -->
-            <div id="main-menu-actions" class="flex justify-center gap-4">
+            <div id="main-menu-actions" class="flex justify-center gap-4 flex-wrap">
                 <button class="btn btn-primary main-menu-option" onclick="explore()">
                     <span class="text-xl">🌲</span> Explore
                 </button>
@@ -316,10 +418,13 @@
                 <button class="btn btn-primary main-menu-option" onclick="showHireScreen()">
                     <span class="text-xl">🤝</span> Bar
                 </button>
+                <button class="btn btn-success main-menu-option" id="use-potion-out-of-battle-btn" onclick="usePotionOutOfBattle()">
+                    <span class="text-xl">🧪 Potion (<span id="potion-count-main-menu">0</span>)</span>
+                </button>
             </div>
 
             <!-- Battle Actions -->
-            <div id="battle-actions" class="flex justify-center gap-4 hidden">
+            <div id="battle-actions" class="flex justify-center gap-4 flex-wrap hidden">
                 <button class="btn btn-primary" id="attack-btn" onclick="attack()">
                     <span class="text-xl">⚔️</span> Attack
                 </button>
@@ -368,15 +473,15 @@
                 </div>
             </div>
 
-            <!-- Elite Battle Warning Modal -->
-            <div id="elite-warning-modal" class="hidden modal-overlay">
+            <!-- Final Boss Preparation Modal -->
+            <div id="final-boss-prep-modal" class="hidden modal-overlay">
                 <div class="modal-content">
-                    <h2 class="section-title text-yellow-500">A Powerful Foe Approaches!</h2>
-                    <p class="text-lg mb-4">You sense an incredibly strong presence. A true Elite Monster stands in your path!</p>
-                    <p class="text-md mb-4">Are you ready to face this ultimate challenge?</p>
+                    <h2 class="section-title text-red-500">The Final Challenge Awaits!</h2>
+                    <p class="text-lg mb-4">You feel an immense evil presence. The Abyssal Horror is near! Prepare yourself, hero.</p>
+                    <p class="text-md mb-4">Would you like to visit the shop one last time, or face your destiny?</p>
                     <div class="flex justify-center gap-4 mt-4">
-                        <button class="btn btn-danger" onclick="confirmEliteBattle(true)">Fight Elite Boss!</button>
-                        <button class="btn btn-primary" onclick="confirmEliteBattle(false)">Fight Regular Monster</button>
+                        <button class="btn btn-success" onclick="goToShopFromFinalBossPrep()">Visit Shop</button>
+                        <button class="btn btn-danger" onclick="startFinalBossBattle()">Face the Horror!</button>
                     </div>
                 </div>
             </div>
@@ -411,10 +516,264 @@
     </div>
 
     <script>
+        // Player occupation base stats and skills
+        const occupations = {
+            Warrior: {
+                maxHp: 100, attack: 9, defense: 12, critChance: 0.10,
+                skills: {
+                    1: { name: "Shield Bash", icon: "🛡️", effect: (target) => {
+                        setMessage("You use Shield Bash! Stuns the enemy for 1 turn and deals moderate damage!");
+                        const damage = Math.max(1, (player.attack + getTotalAttackBonus()) * 1.2 - target.defense); // Further reduced damage
+                        target.hp -= damage;
+                        target.stunned = true; // Stun for 1 turn
+                        return damage;
+                    }},
+                    2: { name: "Heroic Strike", icon: "💥", effect: (target) => {
+                        setMessage("You use Heroic Strike! Deals heavy damage!");
+                        const damage = Math.max(1, (player.attack + getTotalAttackBonus()) * 2.0 - target.defense); // Further reduced damage
+                        target.hp -= damage;
+                        return damage;
+                    }}
+                }
+            },
+            Mage: {
+                maxHp: 70, attack: 10, defense: 5, critChance: 0.07,
+                skills: {
+                    1: { name: "Fireball", icon: "🔥", effect: (target) => {
+                        setMessage("You cast Fireball! Deals massive magic damage!");
+                        const damage = Math.max(1, (player.attack + getTotalAttackBonus()) * 1.8 - target.defense); // Further reduced damage
+                        target.hp -= damage;
+                        return damage;
+                    }},
+                    2: { name: "Blizzard", icon: "❄️", effect: (target) => {
+                        setMessage("You cast Blizzard! Deals heavy damage and slows enemy!");
+                        const damage = Math.max(1, (player.attack + getTotalAttackBonus()) * 1.5 - target.defense); // Further reduced damage
+                        target.hp -= damage;
+                        target.slowed = true; // Slow for 1 turn
+                        return damage;
+                    }}
+                }
+            },
+            Rogue: {
+                maxHp: 95, attack: 10, defense: 10, critChance: 0.15,
+                skills: {
+                    1: { name: "Flurry of Blows", icon: "💨", effect: (target) => {
+                        let totalDamage = 0;
+                        let hits = 0;
+                        setMessage("You unleash a Flurry of Blows!");
+                        for (let i = 0; i < 3; i++) {
+                            if (Math.random() < 0.8) { // Increased hit chance for skill
+                                const damage = Math.max(1, (player.attack + getTotalAttackBonus()) * 1.0 - target.defense); // Further reduced per-hit damage
+                                target.hp -= damage;
+                                totalDamage += damage;
+                                hits++;
+                            }
+                        }
+                        if (hits > 0) {
+                            setMessage(`You hit ${hits} times for a total of ${totalDamage} damage!`);
+                        } else {
+                            setMessage("Your flurry missed!");
+                        }
+                        return totalDamage;
+                    }},
+                    2: { name: "Backstab", icon: "🔪", effect: (target) => {
+                        setMessage("You use Backstab! Deals critical damage!");
+                        const damage = Math.max(1, (player.attack + getTotalAttackBonus()) * 3.0 - target.defense); // Further reduced damage
+                        target.hp -= damage;
+                        return damage;
+                    }}
+                }
+            }
+        };
+
+        // Enemy definitions (with icons)
+        // Tier 1 Enemies (Levels 1-2)
+        const tier1Enemies = [
+            { name: "Goblin", icon: "👹", hp: 45, attack: 12, defense: 6, xp: 35, coinDrop: [10, 15] },
+            { name: "Slime", icon: "🦠", hp: 40, attack: 9, defense: 4, xp: 30, coinDrop: [8, 12] },
+            { name: "Dire Wolf", icon: "🐺", hp: 55, attack: 14, defense: 8, xp: 45, coinDrop: [12, 18] },
+            { name: "Bandit", icon: "🦹‍♂️", hp: 50, attack: 13, defense: 7, xp: 40, coinDrop: [11, 16] },
+        ];
+
+        // Tier 2 Enemies (Levels 3-4) - Stronger versions
+        const tier2Enemies = [
+            { name: "Orc Grunt", icon: "👺", hp: 70, attack: 17, defense: 10, xp: 60, coinDrop: [15, 25] },
+            { name: "Giant Spider", icon: "🕷️", hp: 65, attack: 16, defense: 9, xp: 55, coinDrop: [14, 22] },
+            { name: "Stone Golem", icon: "🪨", hp: 80, attack: 15, defense: 12, xp: 70, coinDrop: [18, 28] },
+            { name: "Dark Cultist", icon: "👤", hp: 60, attack: 20, defense: 8, xp: 65, coinDrop: [16, 26] }
+        ];
+
+        // Tier 3 Enemies (Levels 5+) - Even stronger
+        const tier3Enemies = [
+            { name: "Minotaur Warrior", icon: "🐂", hp: 100, attack: 22, defense: 14, xp: 90, coinDrop: [25, 40] },
+            { name: "Shadow Beast", icon: "🐾", hp: 90, attack: 25, defense: 10, xp: 85, coinDrop: [22, 38] },
+            { name: "Ancient Treant", icon: "🌳", hp: 110, attack: 20, defense: 16, xp: 95, coinDrop: [28, 45] }
+        ];
+
+        // New Monsters with Special Abilities
+        const specialAbilityMonsters = [
+            { name: "Regenerating Ogre", icon: "💚", hp: 90, attack: 18, defense: 10, xp: 75, coinDrop: [20, 30], ability: "selfHeal", abilityRate: 0.15 }, // 15% chance to heal 10% of max HP
+            { name: "Shadow Weaver", icon: "🌑", hp: 70, attack: 20, defense: 8, xp: 80, coinDrop: [20, 35], ability: "debuff", abilityRate: 0.20 }, // 20% chance to debuff player attack by 50% for 2 turns
+            { name: "Ironclad Guardian", icon: "🛡️", hp: 120, attack: 15, defense: 18, xp: 100, coinDrop: [30, 45], ability: "shield", abilityRate: 0.10 } // 10% chance to activate 80% damage reduction shield for 2 turns
+        ];
+
+
+        const eliteEnemies = [
+            // Stats adjusted to be tough but beatable for a Lv5 player
+            { name: "Minotaur Lord", icon: "🐂", hp: 250, attack: 28, defense: 15, xp: 300, coinDrop: [80, 150] },
+            { name: "Ancient Golem", icon: "🗿", hp: 300, attack: 25, defense: 20, xp: 350, coinDrop: [90, 180] },
+            { name: "Shadow King", icon: "👤", hp: 200, attack: 35, defense: 12, xp: 320, coinDrop: [100, 200] }
+        ];
+
+        // Final Boss (Level 6)
+        const finalBoss = {
+            name: "The Abyssal Horror", icon: "🐙", hp: 500, attack: 40, defense: 25, xp: 1000, coinDrop: [200, 500],
+            isFinalBoss: true,
+            immunityTurns: 0,
+            strengthTurns: 0
+        };
+
+        // Shop Items (Full pool for randomization) - Equipment values reduced
+        const fullShopItemPool = [
+            { name: "Iron Sword", cost: 20, type: "weapon", attack: 3, defense: 0, icon: "🗡️", description: "Attack +3", sellValue: 10, isEpic: false },
+            { name: "Leather Armour", cost: 20, type: "armour", attack: 0, defense: 3, icon: "🛡️", description: "Defence +3", sellValue: 10, isEpic: false },
+            { name: "Healing Potion", cost: 15, type: "heal", value: 50, icon: "🧪", description: "Restores 50 HP", sellValue: 7, isEpic: false },
+            { name: "Steel Broadsword", cost: 40, type: "weapon", attack: 5, defense: 0, icon: "⚔️", description: "Attack +5", sellValue: 20, isEpic: false },
+            { name: "Chainmail Vest", cost: 40, type: "armour", attack: 0, defense: 5, icon: "🪖", description: "Defence +5", sellValue: 20, isEpic: false },
+            { name: "Amulet of Haste", cost: 50, type: "accessory", attack: 2, defense: 2, icon: "⚡", description: "Attack +2, Defence +2", sellValue: 25, isEpic: false },
+            { name: "Ring of Resilience", cost: 60, type: "accessory", attack: 3, defense: 3, icon: "💍", description: "Attack +3, Defence +3", sellValue: 30, isEpic: false },
+            // Epic Items - Only purchasable in shop
+            { name: "Dragon Blade", cost: 300, type: "weapon", attack: 10, defense: 0, icon: "🐉", description: "Attack +10 (Epic)", sellValue: 150, isEpic: true },
+            { name: "Aegis Shield", cost: 300, type: "armour", attack: 0, defense: 10, icon: "✨", description: "Defence +10 (Epic)", sellValue: 150, isEpic: true },
+            { name: "Phoenix Amulet", cost: 200, type: "accessory", attack: 8, defense: 8, icon: "🔥", description: "Attack +8, Defence +8 (Epic)", sellValue: 100, isEpic: true }
+        ];
+
+        // Companion types
+        const companions = {
+            Healer: {
+                name: "Healer", icon: "⚕️", cost: 50,
+                description: "Heals you for 10 HP every 10 turns.",
+                effect: () => {
+                    const healAmount = 10;
+                    player.hp = Math.min(player.maxHp, Math.floor(player.hp + healAmount)); // Ensure integer HP
+                    setMessage(gameMessage.textContent + ` Your Healer companion heals you for ${healAmount} HP!`);
+                    companionHealSound.triggerAttackRelease("G4", "8n", Tone.now());
+                },
+                frequency: 10 // Every 10 turns
+            },
+            DarkSlave: {
+                name: "Dark Slave", icon: "😈", cost: 60,
+                description: "Deals 10 damage to the enemy every 5 turns.",
+                effect: (target) => {
+                    const damage = 10;
+                    target.hp -= damage;
+                    target.hp = Math.floor(target.hp); // Ensure integer HP
+                    setMessage(gameMessage.textContent + ` Your Dark Slave companion attacks for ${damage} damage!`);
+                    companionAttackSound.triggerAttackRelease("C3", "8n", Tone.now());
+                },
+                frequency: 5 // Every 5 turns
+            },
+            Pet: {
+                name: "Pet", icon: "🐾", cost: 40,
+                description: "Deals 5 damage and heals you for 5 HP every 8 turns.", // Changed frequency to 8
+                effect: (target) => {
+                    const damage = 5;
+                    const healAmount = 5;
+                    target.hp -= damage;
+                    target.hp = Math.floor(target.hp); // Ensure integer HP
+                    player.hp = Math.min(player.maxHp, Math.floor(player.hp + healAmount)); // Ensure integer HP
+                    setMessage(gameMessage.textContent + ` Your Pet companion attacks for ${damage} damage and heals you for ${healAmount} HP!`);
+                    companionAttackSound.triggerAttackRelease("E4", "8n", Tone.now());
+                    companionHealSound.triggerAttackRelease("C5", "8n", Tone.now());
+                },
+                frequency: 8 // Every 8 turns
+            }
+        };
+
+        // XP required for each level
+        const xpRequirements = {
+            1: 100, // To reach Level 2 (approx 3 regular monsters)
+            2: 250, // To reach Level 3 (approx 5 regular monsters from Lv2)
+            3: 450, // To reach Level 4 (approx 7 regular monsters from Lv3)
+            4: 700, // To reach Level 5
+            5: 850, // Adjusted to make Lv 5 to Lv 6 more achievable
+            6: 999999 // Max level, no more leveling up
+        };
+
+
         // Tone.js Sound Effects Setup
-        let attackSound, levelUpSound, victorySound, defeatSound, coinSound, itemSound, skillSound, potionSound, companionHealSound, companionAttackSound, criticalHitSound;
+        let attackSound, levelUpSound, victorySound, defeatSound, coinSound, itemSound, skillSound, potionSound, companionHealSound, companionAttackSound, criticalHitSound, debuffSound, shieldSound, healMonsterSound;
+
+        // Game UI Elements (Declared as let, assigned in window.onload)
+        let gameContainer, occupationScreen, gameScreen, gameMessage, playerOccupation, playerLevel, playerAttack, playerDefense, playerHpText, playerHpBar, playerXpText, playerXpBar, playerCoins, playerPotions, playerEquipment, companionDisplay, playerStatsDisplay, potionCountMainMenu, usePotionOutOfBattleBtn;
+        let enemyDisplay, enemyIcon, enemyName, enemyAttack, enemyDefense, enemyHpText, enemyHpBar;
+        let mainMenuActions, battleActions, exploreBtn, attackBtn, skillBtn, skillIcon, skillName, potionBtn, potionCount, fleeBtn, restartBtn;
+        let confirmModal, finalBossPrepModal, battleResultModal, resultTitle, resultXp, resultCoins, resultEquipment, gameOverModal, gameOverTitle, gameOverMessage;
+        let shopScreen, shopItemsContainer, equippedItemsSellContainer; // Added shop and hire screen elements
+        let hireScreen, hireOptionsContainer;
+
 
         window.onload = () => {
+            // Assign UI elements here to ensure DOM is loaded
+            gameContainer = document.getElementById('game-container');
+            occupationScreen = document.getElementById('occupation-screen');
+            gameScreen = document.getElementById('game-screen');
+            gameMessage = document.getElementById('game-message');
+            playerOccupation = document.getElementById('player-occupation');
+            playerLevel = document.getElementById('player-level');
+            playerAttack = document.getElementById('player-attack');
+            playerDefense = document.getElementById('player-defence');
+            playerHpText = document.getElementById('player-hp-text');
+            playerHpBar = document.getElementById('player-hp-bar');
+            playerXpText = document.getElementById('player-xp-text');
+            playerXpBar = document.getElementById('player-xp-bar');
+            playerCoins = document.getElementById('player-coins');
+            playerPotions = document.getElementById('player-potions');
+            playerEquipment = document.getElementById('player-equipment');
+            companionDisplay = document.getElementById('companion-display');
+            playerStatsDisplay = document.getElementById('player-stats-display');
+            potionCountMainMenu = document.getElementById('potion-count-main-menu');
+            usePotionOutOfBattleBtn = document.getElementById('use-potion-out-of-battle-btn');
+
+            enemyDisplay = document.getElementById('enemy-display');
+            enemyIcon = document.getElementById('enemy-icon');
+            enemyName = document.getElementById('enemy-name');
+            enemyAttack = document.getElementById('enemy-attack');
+            enemyDefense = document.getElementById('enemy-defence');
+            enemyHpText = document.getElementById('enemy-hp-text');
+            enemyHpBar = document.getElementById('enemy-hp-bar');
+
+            mainMenuActions = document.getElementById('main-menu-actions');
+            battleActions = document.getElementById('battle-actions');
+            exploreBtn = document.getElementById('explore-btn');
+            attackBtn = document.getElementById('attack-btn');
+            skillBtn = document.getElementById('skill-btn');
+            skillIcon = document.getElementById('skill-icon');
+            skillName = document.getElementById('skill-name');
+            potionBtn = document.getElementById('potion-btn');
+            potionCount = document.getElementById('potion-count');
+            fleeBtn = document.getElementById('flee-btn');
+            restartBtn = document.getElementById('restart-btn');
+
+            confirmModal = document.getElementById('confirm-modal');
+            finalBossPrepModal = document.getElementById('final-boss-prep-modal');
+            battleResultModal = document.getElementById('battle-result-modal');
+            resultTitle = document.getElementById('result-title');
+            resultXp = document.getElementById('result-xp');
+            resultCoins = document.getElementById('result-coins');
+            resultEquipment = document.getElementById('result-equipment');
+            gameOverModal = document.getElementById('game-over-modal');
+            gameOverTitle = document.getElementById('game-over-title');
+            gameOverMessage = document.getElementById('game-over-message');
+
+            // Assign shop and hire screen elements
+            shopScreen = document.getElementById('shop-screen');
+            shopItemsContainer = document.getElementById('shop-items-container');
+            equippedItemsSellContainer = document.getElementById('equipped-items-sell-container');
+            hireScreen = document.getElementById('hire-screen');
+            hireOptionsContainer = document.getElementById('hire-options-container');
+
+
             // Start audio context on first user interaction
             document.body.addEventListener('click', () => {
                 if (Tone.context.state !== 'running') {
@@ -558,6 +917,42 @@
                     release: 0.3
                 }
             }).toDestination();
+
+            // Debuff Sound (low, descending tone)
+            debuffSound = new Tone.PolySynth(Tone.Synth, {
+                volume: -15,
+                oscillator: { type: "sawtooth" },
+                envelope: {
+                    attack: 0.05,
+                    decay: 0.4,
+                    sustain: 0.0,
+                    release: 0.6
+                }
+            }).toDestination();
+
+            // Shield Activate Sound (ascending, metallic)
+            shieldSound = new Tone.PolySynth(Tone.Synth, {
+                volume: -15,
+                oscillator: { type: "triangle" },
+                envelope: {
+                    attack: 0.01,
+                    decay: 0.2,
+                    sustain: 0.0,
+                    release: 0.3
+                }
+            }).toDestination();
+
+            // Monster Heal Sound
+            healMonsterSound = new Tone.PolySynth(Tone.Synth, {
+                volume: -18,
+                oscillator: { type: "sine" },
+                envelope: {
+                    attack: 0.02,
+                    decay: 0.1,
+                    sustain: 0.0,
+                    release: 0.2
+                }
+            }).toDestination();
         };
 
         // Game State Variables
@@ -567,248 +962,25 @@
         const FROM_HELL_BATTLE_FREQUENCY = 5; // Every 5 battles, encounter a "from Hell" monster
         const MIN_LEVEL_FOR_ELITE = 5; // Minimum level to start encountering elite monsters
         let skillCooldown = 0; // Cooldown for player skill (turns)
-        const SKILL_COOLDOWN_TURNS = 5; // Turns needed to reset skill cooldown
+        const SKILL_COOLDOWN_TURNS = 7; // Turns needed to reset skill cooldown (increased from 5)
         let battleRewards = { xp: 0, coins: 0, equipment: [] }; // To store rewards for the result window (array for equipment)
-
-        // Game UI Elements
-        const gameContainer = document.getElementById('game-container'); // Get the main game container for shake effect
-        const occupationScreen = document.getElementById('occupation-screen');
-        const gameScreen = document.getElementById('game-screen');
-        const gameMessage = document.getElementById('game-message');
-        const playerOccupation = document.getElementById('player-occupation');
-        const playerLevel = document.getElementById('player-level');
-        const playerAttack = document.getElementById('player-attack');
-        const playerDefense = document.getElementById('player-defense');
-        const playerHpText = document.getElementById('player-hp-text');
-        const playerHpBar = document.getElementById('player-hp-bar');
-        const playerXpText = document.getElementById('player-xp-text');
-        const playerXpBar = document.getElementById('player-xp-bar');
-        const playerCoins = document.getElementById('player-coins');
-        const playerPotions = document.getElementById('player-potions');
-        const playerEquipment = document.getElementById('player-equipment');
-        const companionDisplay = document.getElementById('companion-display');
-
-        const enemyDisplay = document.getElementById('enemy-display');
-        const enemyIcon = document.getElementById('enemy-icon');
-        const enemyName = document.getElementById('enemy-name');
-        const enemyAttack = document.getElementById('enemy-attack');
-        const enemyDefense = document.getElementById('enemy-defense');
-        const enemyHpText = document.getElementById('enemy-hp-text');
-        const enemyHpBar = document.getElementById('enemy-hp-bar');
-
-        const mainMenuActions = document.getElementById('main-menu-actions');
-        const battleActions = document.getElementById('battle-actions');
-        const exploreBtn = document.getElementById('explore-btn');
-        const attackBtn = document.getElementById('attack-btn');
-        const skillBtn = document.getElementById('skill-btn');
-        const skillIcon = document.getElementById('skill-icon');
-        const skillName = document.getElementById('skill-name');
-        const potionBtn = document.getElementById('potion-btn');
-        const potionCount = document.getElementById('potion-count');
-        const fleeBtn = document.getElementById('flee-btn');
-        const restartBtn = document.getElementById('restart-btn');
-
-        const confirmModal = document.getElementById('confirm-modal');
-        const eliteWarningModal = document.getElementById('elite-warning-modal');
-        const shopScreen = document.getElementById('shop-screen');
-        const shopItemsContainer = document.getElementById('shop-items-container');
-        const equippedItemsSellContainer = document.getElementById('equipped-items-sell-container');
-        const hireScreen = document.getElementById('hire-screen');
-        const hireOptionsContainer = document.getElementById('hire-options-container');
-
-        const battleResultModal = document.getElementById('battle-result-modal');
-        const resultTitle = document.getElementById('result-title');
-        const resultXp = document.getElementById('result-xp');
-        const resultCoins = document.getElementById('result-coins');
-        const resultEquipment = document.getElementById('result-equipment');
-        const gameOverModal = document.getElementById('game-over-modal');
-        const gameOverTitle = document.getElementById('game-over-title');
-        const gameOverMessage = document.getElementById('game-over-message');
-
-
-        // Player occupation base stats and skills
-        const occupations = {
-            Warrior: {
-                maxHp: 100, attack: 9, defense: 12, critChance: 0.10, // Reduced from maxHp: 120, attack: 10, defense: 15
-                skills: {
-                    1: { name: "Shield Bash", icon: "🛡️", effect: (target) => {
-                        setMessage("You use Shield Bash! Stuns the enemy for 1 turn and deals moderate damage!");
-                        // Skill damage now includes equipment bonus, multiplier reduced
-                        const damage = Math.max(1, (player.attack + getTotalAttackBonus()) * 1.2 - target.defense);
-                        target.hp -= damage;
-                        return damage;
-                    }},
-                    2: { name: "Heroic Strike", icon: "💥", effect: (target) => {
-                        setMessage("You use Heroic Strike! Deals heavy damage!");
-                        // Skill damage now includes equipment bonus, multiplier reduced
-                        const damage = Math.max(1, (player.attack + getTotalAttackBonus()) * 1.8 - target.defense);
-                        target.hp -= damage;
-                        return damage;
-                    }}
-                }
-            },
-            Mage: {
-                maxHp: 70, attack: 10, defense: 5, critChance: 0.07, // Reduced attack from 12 to 10
-                skills: {
-                    1: { name: "Fireball", icon: "🔥", effect: (target) => {
-                        setMessage("You cast Fireball! Deals massive magic damage!");
-                        // Skill damage now includes equipment bonus, multiplier reduced but still strong
-                        const damage = Math.max(1, (player.attack + getTotalAttackBonus()) * 1.6 - target.defense); // Reduced from 1.8
-                        target.hp -= damage;
-                        return damage;
-                    }},
-                    2: { name: "Blizzard", icon: "❄️", effect: (target) => {
-                        setMessage("You cast Blizzard! Deals heavy damage and slows enemy!");
-                        // Skill damage now includes equipment bonus, multiplier reduced but still strong
-                        const damage = Math.max(1, (player.attack + getTotalAttackBonus()) * 1.1 - target.defense); // Reduced from 1.3
-                        target.hp -= damage;
-                        return damage;
-                    }}
-                }
-            },
-            Rogue: {
-                maxHp: 95, attack: 10, defense: 10, critChance: 0.15, // Increased from maxHp: 85, defense: 8
-                skills: {
-                    1: { name: "Flurry of Blows", icon: "💨", effect: (target) => {
-                        let totalDamage = 0;
-                        let hits = 0;
-                        setMessage("You unleash a Flurry of Blows!");
-                        for (let i = 0; i < 3; i++) {
-                            // Skill damage now includes equipment bonus, multiplier adjusted to be collectively stronger than normal attack
-                            if (Math.random() < 0.6) {
-                                const damage = Math.max(1, (player.attack + getTotalAttackBonus()) * 0.8 - target.defense); // Adjusted per-hit damage
-                                target.hp -= damage;
-                                totalDamage += damage;
-                                hits++;
-                            }
-                        }
-                        if (hits > 0) {
-                            setMessage(`You hit ${hits} times for a total of ${totalDamage} damage!`);
-                        } else {
-                            setMessage("Your flurry missed!");
-                        }
-                        return totalDamage;
-                    }},
-                    2: { name: "Backstab", icon: "🔪", effect: (target) => {
-                        setMessage("You use Backstab! Deals critical damage!");
-                        // Skill damage now includes equipment bonus, multiplier reduced
-                        const damage = Math.max(1, (player.attack + getTotalAttackBonus()) * 2.5 - target.defense); // Reduced damage
-                        target.hp -= damage;
-                        return damage;
-                    }}
-                }
-            }
-        };
-
-        // Enemy definitions (with icons)
-        // Tier 1 Enemies (Levels 1-2)
-        const tier1Enemies = [
-            { name: "Goblin", icon: "👹", hp: 45, attack: 12, defense: 6, xp: 35, coinDrop: [10, 15] },
-            { name: "Slime", icon: "🦠", hp: 40, attack: 9, defense: 4, xp: 30, coinDrop: [8, 12] },
-            { name: "Dire Wolf", icon: "🐺", hp: 55, attack: 14, defense: 8, xp: 45, coinDrop: [12, 18] },
-            { name: "Bandit", icon: "🦹‍♂️", hp: 50, attack: 13, defense: 7, xp: 40, coinDrop: [11, 16] },
-        ];
-
-        // Tier 2 Enemies (Levels 3-4) - Stronger versions
-        const tier2Enemies = [
-            { name: "Orc Grunt", icon: "👺", hp: 70, attack: 17, defense: 10, xp: 60, coinDrop: [15, 25] },
-            { name: "Giant Spider", icon: "🕷️", hp: 65, attack: 16, defense: 9, xp: 55, coinDrop: [14, 22] },
-            { name: "Stone Golem", icon: "🪨", hp: 80, attack: 15, defense: 12, xp: 70, coinDrop: [18, 28] },
-            { name: "Dark Cultist", icon: "👤", hp: 60, attack: 20, defense: 8, xp: 65, coinDrop: [16, 26] }
-        ];
-
-        // Tier 3 Enemies (Levels 5+) - Even stronger
-        const tier3Enemies = [
-            { name: "Minotaur Warrior", icon: "🐂", hp: 100, attack: 22, defense: 14, xp: 90, coinDrop: [25, 40] },
-            { name: "Shadow Beast", icon: "🐾", hp: 90, attack: 25, defense: 10, xp: 85, coinDrop: [22, 38] },
-            { name: "Ancient Treant", icon: "🌳", hp: 110, attack: 20, defense: 16, xp: 95, coinDrop: [28, 45] }
-        ];
-
-
-        const eliteEnemies = [
-            // Stats adjusted to be tough but beatable for a Lv5 player
-            { name: "Minotaur Lord", icon: "🐂", hp: 250, attack: 28, defense: 15, xp: 300, coinDrop: [80, 150] },
-            { name: "Ancient Golem", icon: "🗿", hp: 300, attack: 25, defense: 20, xp: 350, coinDrop: [90, 180] },
-            { name: "Shadow King", icon: "👤", hp: 200, attack: 35, defense: 12, xp: 320, coinDrop: [100, 200] }
-        ];
-
-        // Shop Items (Full pool for randomization) - Equipment values reduced
-        const fullShopItemPool = [
-            { name: "Iron Sword", cost: 20, type: "attack", value: 2, icon: "🗡️", description: "Attack +2", sellValue: 10 },
-            { name: "Leather Armor", cost: 20, type: "defense", value: 2, icon: "🛡️", description: "Defense +2", sellValue: 10 },
-            { name: "Healing Potion", cost: 15, type: "heal", value: 50, icon: "🧪", description: "Restores 50 HP", sellValue: 7 },
-            { name: "Ring of Power", cost: 40, type: "attack", value: 5, icon: "💍", description: "Attack +5", sellValue: 20 },
-            { name: "Steel Plate", cost: 40, type: "defense", value: 5, icon: "🪖", description: "Defense +5", sellValue: 20 },
-            { name: "Amulet of Haste", cost: 50, type: "mixed", attack: 2, defense: 2, icon: "⚡", description: "Attack +2, Defense +2", sellValue: 25 },
-            // Epic Items - Values reduced
-            { name: "Dragon Blade", cost: 150, type: "attack", value: 10, icon: "🐉", description: "Attack +10 (Epic)", sellValue: 75 },
-            { name: "Aegis Shield", cost: 150, type: "defense", value: 10, icon: "✨", description: "Defense +10 (Epic)", sellValue: 75 },
-            { name: "Phoenix Feather", cost: 100, type: "heal", value: 100, icon: "🔥", description: "Restores 100 HP (Epic)", sellValue: 50 }
-        ];
-
-        // Companion types
-        const companions = {
-            Healer: {
-                name: "Healer", icon: "⚕️", cost: 50,
-                description: "Heals you for 10 HP every 10 turns.",
-                effect: () => {
-                    const healAmount = 10;
-                    player.hp = Math.min(player.maxHp, Math.floor(player.hp + healAmount)); // Ensure integer HP
-                    setMessage(gameMessage.textContent + ` Your Healer companion heals you for ${healAmount} HP!`);
-                    companionHealSound.triggerAttackRelease("G4", "8n");
-                },
-                frequency: 10 // Every 10 turns
-            },
-            DarkSlave: {
-                name: "Dark Slave", icon: "😈", cost: 60,
-                description: "Deals 10 damage to the enemy every 5 turns.",
-                effect: (target) => {
-                    const damage = 10;
-                    target.hp -= damage;
-                    target.hp = Math.floor(target.hp); // Ensure integer HP
-                    setMessage(gameMessage.textContent + ` Your Dark Slave companion attacks for ${damage} damage!`);
-                    companionAttackSound.triggerAttackRelease("C3", "8n");
-                },
-                frequency: 5 // Every 5 turns
-            },
-            Pet: {
-                name: "Pet", icon: "🐾", cost: 40,
-                description: "Deals 5 damage and heals you for 5 HP every 8 turns.", // Changed frequency to 8
-                effect: (target) => {
-                    const damage = 5;
-                    const healAmount = 5;
-                    target.hp -= damage;
-                    target.hp = Math.floor(target.hp); // Ensure integer HP
-                    player.hp = Math.min(player.maxHp, Math.floor(player.hp + healAmount)); // Ensure integer HP
-                    setMessage(gameMessage.textContent + ` Your Pet companion attacks for ${damage} damage and heals you for ${healAmount} HP!`);
-                    companionAttackSound.triggerAttackRelease("E4", "8n");
-                    companionHealSound.triggerAttackRelease("C5", "8n");
-                },
-                frequency: 8 // Every 8 turns
-            }
-        };
-
-        // XP required for each level
-        const xpRequirements = {
-            1: 100, // To reach Level 2 (approx 3 regular monsters)
-            2: 250, // To reach Level 3 (approx 5 regular monsters from Lv2)
-            3: 450, // To reach Level 4 (approx 7 regular monsters from Lv3)
-            4: 700, // To reach Level 5
-            5: 1000 // To reach Level 6 (Final Level for this game)
-        };
+        let playerDebuffTurns = 0; // Tracks turns for player debuff
+        let enemyShieldTurns = 0; // Tracks turns for enemy shield
+        let enemyImmunityTurns = 0; // Tracks turns for enemy immunity
+        let enemyStrengthTurns = 0; // Tracks turns for enemy strength (attack/defence)
 
         /**
          * Calculates total attack bonus from equipped items.
          */
         function getTotalAttackBonus() {
-            return player.equippedItems.reduce((sum, item) => sum + (item.attackBonus || 0), 0);
+            return player.equippedItems.reduce((sum, item) => sum + (item.attack || 0), 0);
         }
 
         /**
-         * Calculates total defense bonus from equipped items.
+         * Calculates total defence bonus from equipped items.
          */
         function getTotalDefenseBonus() {
-            return player.equippedItems.reduce((sum, item) => sum + (item.defenseBonus || 0), 0);
+            return player.equippedItems.reduce((sum, item) => sum + (item.defense || 0), 0);
         }
 
         /**
@@ -821,13 +993,19 @@
             playerDefense.textContent = player.defense + getTotalDefenseBonus();
             playerCoins.textContent = player.coins;
             playerPotions.textContent = player.potions;
+            potionCountMainMenu.textContent = player.potions; // Update potion count on main menu button
+
+            // Disable potion button if no potions or full HP
+            usePotionOutOfBattleBtn.disabled = player.potions <= 0 || player.hp >= player.maxHp;
+            usePotionOutOfBattleBtn.classList.toggle('opacity-50', player.potions <= 0 || player.hp >= player.maxHp);
+
 
             // Display all equipped items with their effects
             if (player.equippedItems.length > 0) {
                 playerEquipment.innerHTML = player.equippedItems.map(item => {
                     let effect = [];
-                    if (item.attackBonus) effect.push(`Atk +${item.attackBonus}`);
-                    if (item.defenseBonus) effect.push(`Def +${item.defenseBonus}`);
+                    if (item.attack > 0) effect.push(`Atk +${item.attack}`);
+                    if (item.defense > 0) effect.push(`Def +${item.defense}`);
                     return `${item.name} (${item.icon}) (${effect.join(', ')})`;
                 }).join('<br>');
             } else {
@@ -837,9 +1015,20 @@
             // Display companion
             companionDisplay.textContent = player.companion ? `Companion: ${player.companion.name} ${player.companion.icon}` : "Companion: None";
 
-
             playerHpText.textContent = `${player.hp}/${player.maxHp}`;
             playerHpBar.style.width = `${(player.hp / player.maxHp) * 100}%`;
+
+            // Update HP bar color based on percentage
+            playerHpBar.classList.remove('green-hp', 'yellow-hp', 'red-hp');
+            const playerHpPercentage = (player.hp / player.maxHp) * 100;
+            if (playerHpPercentage > 50) {
+                playerHpBar.classList.add('green-hp');
+            } else if (playerHpPercentage > 20) {
+                playerHpBar.classList.add('yellow-hp');
+            } else {
+                playerHpBar.classList.add('red-hp');
+            }
+
 
             playerXpText.textContent = `${player.xp}/${player.xpToNextLevel}`;
             playerXpBar.style.width = `${(player.xp / player.xpToNextLevel) * 100}%`;
@@ -857,6 +1046,13 @@
             potionBtn.disabled = player.potions <= 0;
             potionBtn.classList.toggle('opacity-50', player.potions <= 0);
             potionCount.textContent = player.potions;
+
+            // Apply/remove debuff visual
+            if (playerDebuffTurns > 0) {
+                playerStatsDisplay.classList.add('debuff-active');
+            } else {
+                playerStatsDisplay.classList.remove('debuff-active');
+            }
         }
 
         /**
@@ -869,6 +1065,8 @@
                 enemyDisplayName += " (from Hell)";
             } else if (eliteEnemies.some(e => e.name === currentEnemy.name)) {
                 enemyDisplayName += " (Elite)";
+            } else if (currentEnemy.isFinalBoss) {
+                enemyDisplayName += " (Final Boss)";
             }
             enemyName.textContent = enemyDisplayName;
             enemyAttack.textContent = currentEnemy.attack;
@@ -877,6 +1075,29 @@
             const displayHp = Math.max(0, Math.floor(currentEnemy.hp)); // Ensure integer HP
             enemyHpText.textContent = `${displayHp}/${currentEnemy.maxHp}`;
             enemyHpBar.style.width = `${(displayHp / currentEnemy.maxHp) * 100}%`;
+
+            // Update HP bar color based on percentage
+            enemyHpBar.classList.remove('green-hp', 'yellow-hp', 'red-hp');
+            const enemyHpPercentage = (currentEnemy.hp / currentEnemy.maxHp) * 100;
+            if (enemyHpPercentage > 50) {
+                enemyHpBar.classList.add('green-hp');
+            } else if (enemyHpPercentage > 20) {
+                enemyHpBar.classList.add('yellow-hp');
+            } else {
+                enemyHpBar.classList.add('red-hp');
+            }
+
+            // Apply/remove shield/immunity visual
+            if (enemyShieldTurns > 0) {
+                enemyDisplay.classList.add('shield-active');
+            } else {
+                enemyDisplay.classList.remove('shield-active');
+            }
+            if (enemyImmunityTurns > 0) {
+                enemyDisplay.classList.add('immunity-active');
+            } else {
+                enemyDisplay.classList.remove('immunity-active');
+            }
         }
 
         /**
@@ -885,6 +1106,8 @@
          */
         function setMessage(message) {
             gameMessage.textContent = message;
+            gameMessage.classList.add('slide-in'); // Add slide-in animation
+            setTimeout(() => gameMessage.classList.remove('slide-in'), 500);
         }
 
         /**
@@ -914,7 +1137,8 @@
                 companion: null, // Single companion
                 companionTurnCounter: 0, // Reset companion turn counter
                 encountersFought: 0, // Initialize encountersFought here
-                battlesSinceLastFromHell: 0 // Initialize battlesSinceLastFromHell here
+                battlesSinceLastFromHell: 0, // Initialize battlesSinceLastFromHell here
+                hasFoughtFinalBoss: false // New flag for final boss
             };
 
             occupationScreen.classList.add('hidden');
@@ -934,7 +1158,7 @@
             enemyDisplay.classList.add('hidden');
             shopScreen.classList.add('hidden');
             hireScreen.classList.add('hidden');
-            eliteWarningModal.classList.add('hidden'); // Hide elite warning if visible
+            finalBossPrepModal.classList.add('hidden'); // Hide final boss prep modal if visible
             setMessage("What will you do next?");
             skillCooldown = 0; // Reset skill cooldown when returning to main menu
             updatePlayerStats(); // Update skill button state
@@ -947,12 +1171,20 @@
          */
         function generateEnemy() {
             let enemyPool;
+            // Adjust monster difficulty at Lv3+
+            let defenseMultiplier = 1 + (player.level - 1) * 0.01; // Reduced from 0.02
+
             if (player.level <= 2) {
                 enemyPool = tier1Enemies;
             } else if (player.level <= 4) {
                 enemyPool = tier2Enemies;
             } else { // Level 5+
                 enemyPool = tier3Enemies;
+            }
+
+            // Add special ability monsters to the pool based on player level
+            if (player.level >= 3) {
+                enemyPool = [...enemyPool, ...specialAbilityMonsters];
             }
 
             const baseEnemy = enemyPool[Math.floor(Math.random() * enemyPool.length)];
@@ -966,24 +1198,34 @@
                 player.battlesSinceLastFromHell = 0; // Reset counter
             }
 
-            return {
+            const newEnemy = {
                 name: baseEnemy.name,
                 icon: baseEnemy.icon,
                 hp: Math.floor(baseEnemy.hp * levelMultiplier),
                 maxHp: Math.floor(baseEnemy.hp * levelMultiplier), // Ensure maxHp is set
                 attack: Math.floor(baseEnemy.attack * levelMultiplier),
-                defense: Math.floor(baseEnemy.defense * levelMultiplier),
+                // Increase monster's defence based on player's level (adjusted scaling)
+                defense: Math.floor(baseEnemy.defense * levelMultiplier * defenseMultiplier),
                 xp: baseEnemy.xp,
                 coinDrop: baseEnemy.coinDrop,
                 critChance: 0.05, // Monster critical hit chance
                 stunned: false,
                 slowed: false, // For mage skill
-                isFromHell: isFromHell
+                isFromHell: isFromHell,
+                ability: baseEnemy.ability || null, // Special ability
+                abilityRate: baseEnemy.abilityRate || 0, // Rate of ability activation
+                shieldActive: false,
+                shieldTurns: 0,
+                debuffTurns: 0, // For debuff monster
+                immunityTurns: 0, // For final boss
+                strengthTurns: 0 // For final boss
             };
+
+            return newEnemy;
         }
 
         /**
-         * Initiates an exploration phase, leading to an encounter.
+         * Initiates an exploration phase, leading to an an encounter.
          */
         function explore() {
             if (player.hp <= 0) {
@@ -998,40 +1240,58 @@
             // Reset skill cooldown at start of battle
             skillCooldown = 0;
 
-            // Check if it's time for an elite battle
-            if (player.encountersFought >= FROM_HELL_BATTLE_FREQUENCY * 2 && player.level >= MIN_LEVEL_FOR_ELITE) {
-                // Show elite warning modal
-                eliteWarningModal.classList.remove('hidden');
-                setMessage("A powerful foe approaches!");
+            // Final Boss logic (Lv 6)
+            if (player.level === 6 && !player.hasFoughtFinalBoss) {
+                finalBossPrepModal.classList.remove('hidden');
+                setMessage("The Final Challenge Awaits!");
+                return; // Stop here, wait for player choice
+            }
+
+            // Elite Battle logic (Lv 5) - higher chance, no choice
+            if (player.level === 5 && Math.random() < 0.4) { // 40% chance for elite at Lv 5
+                currentEnemy = { ...eliteEnemies[Math.floor(Math.random() * eliteEnemies.length)] };
+                currentEnemy.maxHp = currentEnemy.hp;
+                currentEnemy.shieldActive = false;
+                currentEnemy.shieldTurns = 0;
+                currentEnemy.debuffTurns = 0;
+                currentEnemy.immunityTurns = 0;
+                currentEnemy.strengthTurns = 0;
+                setMessage(`A powerful ${currentEnemy.name} (Elite) appears! Prepare for a tough battle!`);
             } else {
-                // Proceed with regular monster generation
+                // Regular monster generation
                 currentEnemy = generateEnemy();
                 setMessage(`You encountered a ${currentEnemy.name}!`);
-                enemyDisplay.classList.remove('hidden');
-                updateEnemyStats();
-                updatePlayerStats(); // Update skill button state
-            }
-        }
-
-        /**
-         * Handles the choice from the elite battle warning modal.
-         * @param {boolean} confirm - True to fight elite, false to fight regular.
-         */
-        function confirmEliteBattle(confirm) {
-            eliteWarningModal.classList.add('hidden');
-            if (confirm) {
-                currentEnemy = { ...eliteEnemies[Math.floor(Math.random() * eliteEnemies.length)] };
-                currentEnemy.maxHp = currentEnemy.hp; // Ensure maxHp is set for elite
-                setMessage(`A powerful ${currentEnemy.name} appears! Prepare for a tough battle!`);
-            } else {
-                // Reset encountersFought to delay elite encounter and generate a regular monster
-                player.encountersFought = 0; // Reset completely to ensure next is regular
-                currentEnemy = generateEnemy();
-                setMessage(`You decided to fight a regular monster. You encountered a ${currentEnemy.name}!`);
             }
             enemyDisplay.classList.remove('hidden');
             updateEnemyStats();
             updatePlayerStats(); // Update skill button state
+        }
+
+        /**
+         * Handles the choice to go to shop from final boss prep.
+         */
+        function goToShopFromFinalBossPrep() {
+            finalBossPrepModal.classList.add('hidden');
+            showShop();
+        }
+
+        /**
+         * Starts the final boss battle.
+         */
+        function startFinalBossBattle() {
+            finalBossPrepModal.classList.add('hidden');
+            currentEnemy = { ...finalBoss }; // Use a copy to avoid modifying the original
+            currentEnemy.maxHp = currentEnemy.hp;
+            currentEnemy.shieldActive = false;
+            currentEnemy.shieldTurns = 0;
+            currentEnemy.debuffTurns = 0;
+            currentEnemy.immunityTurns = 0;
+            currentEnemy.strengthTurns = 0;
+            setMessage(`You face THE ABYSSAL HORROR! This is it, hero!`);
+            enemyDisplay.classList.remove('hidden');
+            battleActions.classList.remove('hidden');
+            updateEnemyStats();
+            updatePlayerStats();
         }
 
 
@@ -1041,30 +1301,48 @@
         function attack() {
             if (!currentEnemy || player.hp <= 0) return;
 
-            attackSound.triggerAttackRelease("C4", "8n"); // Play attack sound
+            attackSound.triggerAttackRelease("C4", "8n", Tone.now()); // Play attack sound
+            enemyDisplay.classList.add('flash'); // Flash enemy on hit
+            setTimeout(() => enemyDisplay.classList.remove('flash'), 200);
 
-            // Player attacks enemy
-            const effectivePlayerAttack = player.attack + getTotalAttackBonus();
+            let effectivePlayerAttack = player.attack + getTotalAttackBonus();
+            if (playerDebuffTurns > 0) {
+                effectivePlayerAttack = Math.floor(effectivePlayerAttack / 2); // Half attack if debuffed
+            }
+
             let playerDamage = Math.max(1, effectivePlayerAttack - currentEnemy.defense);
+
+            // Ensure a minimum amount of damage is dealt (adjusted for higher levels)
+            playerDamage = Math.max(playerDamage, Math.floor(effectivePlayerAttack * 0.2)); // At least 20% of player's attack as damage
+
+            // Apply damage reduction if shield is active
+            if (currentEnemy.shieldActive) {
+                playerDamage = Math.floor(playerDamage * 0.20); // Absorb 80% damage
+                setMessage(`The ${currentEnemy.name}'s shield absorbs most of the damage!`);
+            }
 
             let isCritical = false;
             if (Math.random() < player.critChance) {
                 playerDamage = Math.floor(playerDamage * 1.5); // 1.5x critical damage
                 isCritical = true;
-                criticalHitSound.triggerAttackRelease("D5", "8n");
+                criticalHitSound.triggerAttackRelease("D5", "8n", Tone.now());
                 gameContainer.classList.add('shake');
                 setTimeout(() => gameContainer.classList.remove('shake'), 300);
             }
 
-            // Rogue's multi-hit chance (only for basic attack)
-            if (player.occupation === 'Rogue' && !isCritical) { // Multi-hit doesn't stack with crit for simplicity
+            // Rogue's multi-hit chance (only for basic attack) - up to 5 hits
+            if (player.occupation === 'Rogue' && !isCritical) {
                 let hits = 1;
                 const rand = Math.random();
-                if (rand < 0.1) { // 10% for 3 hits
+                if (rand < 0.01) { // 1% chance for 5 hits
+                    hits = 5;
+                } else if (rand < 0.03) { // 2% chance for 4 hits (0.01 to 0.03)
+                    hits = 4;
+                } else if (rand < 0.10) { // 7% chance for 3 hits (0.03 to 0.10)
                     hits = 3;
-                } else if (rand < 0.3) { // 20% for 2 hits (0.1 to 0.3)
+                } else if (rand < 0.30) { // 20% chance for 2 hits (0.10 to 0.30)
                     hits = 2;
-                } // 70% for 1 hit (0.3 to 1.0)
+                } // 70% chance for 1 hit (0.30 to 1.0)
                 playerDamage *= hits;
                 setMessage(`You hit the ${currentEnemy.name} for ${playerDamage} damage! (${hits} hits!)`);
             } else if (isCritical) {
@@ -1085,6 +1363,123 @@
                 return;
             }
 
+            // Enemy's turn (after a short delay for better flow)
+            setTimeout(() => {
+                handleEnemyTurn();
+            }, 1000); // 1 second delay for enemy attack
+        }
+
+        /**
+         * Handles the player using their skill.
+         */
+        function useSkill() {
+            if (!currentEnemy || player.hp <= 0 || skillCooldown > 0) return;
+
+            skillSound.triggerAttackRelease(["C5", "E5", "G5"], "8n", Tone.now()); // Play skill sound
+            enemyDisplay.classList.add('flash'); // Flash enemy on skill hit
+            setTimeout(() => enemyDisplay.classList.remove('flash'), 200);
+
+            if (currentEnemy.isFinalBoss && enemyImmunityTurns > 0) {
+                setMessage(`The ${currentEnemy.name} is immune to your skill!`);
+            } else {
+                player.skillEffect(currentEnemy); // Execute skill effect
+                currentEnemy.hp = Math.floor(currentEnemy.hp); // Ensure integer HP
+            }
+            updateEnemyStats();
+
+            skillCooldown = SKILL_COOLDOWN_TURNS; // Set cooldown
+            updatePlayerStats(); // Update skill button state
+
+            if (currentEnemy.hp <= 0) {
+                currentEnemy.hp = 0; // Ensure HP is 0 in UI
+                updateEnemyStats();
+                setMessage(`You defeated the ${currentEnemy.name} with your skill!`);
+                handleEnemyDefeated();
+                return;
+            }
+
+            // Enemy's turn (after a short delay for better flow)
+            setTimeout(() => {
+                handleEnemyTurn();
+            }, 1500); // Slightly longer delay for skill animations/messages
+        }
+
+        /**
+         * Handles using a potion during battle.
+         */
+        function usePotion() {
+            if (player.potions <= 0 || player.hp <= 0) {
+                setMessage("You have no potions left!");
+                return;
+            }
+
+            potionSound.triggerAttackRelease("E5", "8n", Tone.now()); // Play potion sound
+            player.potions--;
+            const potionHeal = fullShopItemPool.find(item => item.name === "Healing Potion").value;
+            player.hp = Math.min(player.maxHp, Math.floor(player.hp + potionHeal)); // Ensure integer HP
+            setMessage(`You used a potion and healed ${potionHeal} HP!`);
+            updatePlayerStats();
+
+            // Enemy still attacks after potion use
+            setTimeout(() => {
+                handleEnemyTurn();
+            }, 1000);
+        }
+
+        /**
+         * Handles using a potion outside of battle.
+         */
+        function usePotionOutOfBattle() {
+            if (player.potions <= 0) {
+                setMessage("You have no potions left!");
+                return;
+            }
+            if (player.hp >= player.maxHp) {
+                setMessage("Your HP is already full!");
+                return;
+            }
+
+            potionSound.triggerAttackRelease("E5", "8n", Tone.now());
+            player.potions--;
+            const potionHeal = fullShopItemPool.find(item => item.name === "Healing Potion").value;
+            player.hp = Math.min(player.maxHp, Math.floor(player.hp + potionHeal));
+            setMessage(`You used a potion and healed ${potionHeal} HP!`);
+            updatePlayerStats();
+        }
+
+        /**
+         * Handles the enemy's turn, including special abilities.
+         */
+        function handleEnemyTurn() {
+            if (player.hp <= 0) return; // Player already defeated
+
+            // Decrease debuff/shield/immunity/strength turns
+            if (playerDebuffTurns > 0) {
+                playerDebuffTurns--;
+                if (playerDebuffTurns === 0) {
+                    setMessage("Your attack returns to normal!");
+                }
+            }
+            if (enemyShieldTurns > 0) {
+                enemyShieldTurns--;
+                if (enemyShieldTurns === 0) {
+                    currentEnemy.shieldActive = false;
+                    setMessage(`The ${currentEnemy.name}'s shield dissipates!`);
+                }
+            }
+            if (enemyImmunityTurns > 0) {
+                enemyImmunityTurns--;
+                if (enemyImmunityTurns === 0) {
+                    setMessage(`The ${currentEnemy.name}'s immunity wears off!`);
+                }
+            }
+            if (enemyStrengthTurns > 0) {
+                enemyStrengthTurns--;
+                if (enemyStrengthTurns === 0) {
+                    setMessage(`The ${currentEnemy.name}'s strength boost wears off!`);
+                }
+            }
+
             // Companion's turn (if any)
             if (player.companion) {
                 player.companionTurnCounter++;
@@ -1101,243 +1496,116 @@
                 }
             }
 
-            // Enemy attacks player (after a short delay for better flow)
-            setTimeout(() => {
-                if (player.hp <= 0) return; // Check if player already defeated by previous action
-                if (currentEnemy.stunned) {
-                    setMessage(`${currentEnemy.name} is stunned and cannot attack!`);
-                    currentEnemy.stunned = false; // Remove stun after one turn
-                    setMessage("Your turn. What will you do?");
-                    skillCooldown = Math.max(0, skillCooldown - 1); // Decrease skill cooldown
-                    updatePlayerStats(); // Update skill button state after turn
-                    return; // Skip enemy attack
-                }
-                if (currentEnemy.slowed) { // Mage's Blizzard effect
-                    setMessage(`${currentEnemy.name} is slowed!`);
-                    currentEnemy.slowed = false; // Remove slow after one turn
-                }
-
-                const effectivePlayerDefense = player.defense + getTotalDefenseBonus();
-                let enemyDamage = Math.max(1, currentEnemy.attack - effectivePlayerDefense);
-
-                let enemyIsCritical = false;
-                if (Math.random() < currentEnemy.critChance) {
-                    enemyDamage = Math.floor(enemyDamage * 1.5);
-                    enemyIsCritical = true;
-                    criticalHitSound.triggerAttackRelease("D3", "8n");
-                    gameContainer.classList.add('shake');
-                    setTimeout(() => gameContainer.classList.remove('shake'), 300);
-                }
-
-                let finalDamage = enemyDamage;
-                let isTrueDamage = false;
-                const trueDamageChance = 0.05; // 5% chance for true damage
-                if (Math.random() < trueDamageChance) {
-                    const calculatedTrueDamage = effectivePlayerDefense; // True damage equals player's total defense
-                    if (calculatedTrueDamage > finalDamage) { // Only apply if true damage is greater than normal damage
-                        finalDamage = calculatedTrueDamage;
-                        isTrueDamage = true;
-                    }
-                }
-
-                player.hp -= finalDamage;
-                player.hp = Math.floor(player.hp); // Ensure integer HP
-
-                if (isTrueDamage) {
-                    setMessage(`💀 True Damage! ${currentEnemy.name} attacks you for ${finalDamage} damage, ignoring your defense!`);
-                } else if (enemyIsCritical) {
-                    setMessage(`💥 Critical Hit! ${currentEnemy.name} attacks you for ${finalDamage} damage!`);
-                } else {
-                    setMessage(`${currentEnemy.name} attacks you for ${finalDamage} damage!`);
-                }
-                updatePlayerStats();
-
-                if (player.hp <= 0) {
-                    setMessage("You have been defeated! Game Over.");
-                    defeatSound.triggerAttackRelease(["C3", "A2", "F2"], "1n"); // Play defeat sound
-                    endGame(false); // Player defeated
-                }
+            if (currentEnemy.stunned) {
+                setMessage(`${currentEnemy.name} is stunned and cannot attack!`);
+                currentEnemy.stunned = false; // Remove stun after one turn
+                setMessage("Your turn. What will you do?");
                 skillCooldown = Math.max(0, skillCooldown - 1); // Decrease skill cooldown
                 updatePlayerStats(); // Update skill button state after turn
-            }, 1000); // 1 second delay for enemy attack
-        }
-
-        /**
-         * Handles the player using their skill.
-         */
-        function useSkill() {
-            if (!currentEnemy || player.hp <= 0 || skillCooldown > 0) return;
-
-            skillSound.triggerAttackRelease(["C5", "E5", "G5"], "8n"); // Play skill sound
-
-            player.skillEffect(currentEnemy); // Execute skill effect
-            currentEnemy.hp = Math.floor(currentEnemy.hp); // Ensure integer HP
-            updateEnemyStats();
-
-            skillCooldown = SKILL_COOLDOWN_TURNS; // Set cooldown
-            updatePlayerStats(); // Update skill button state
-
-            if (currentEnemy.hp <= 0) {
-                currentEnemy.hp = 0; // Ensure HP is 0 in UI
-                updateEnemyStats();
-                setMessage(`You defeated the ${currentEnemy.name} with your skill!`);
-                handleEnemyDefeated();
-                return;
+                updateEnemyStats(); // Update enemy status
+                return; // Skip enemy attack
+            }
+            if (currentEnemy.slowed) { // Mage's Blizzard effect
+                setMessage(`${currentEnemy.name} is slowed!`);
+                currentEnemy.slowed = false; // Remove slow after one turn
             }
 
-            // Companion's turn (if any)
-            if (player.companion) {
-                player.companionTurnCounter++;
-                if (player.companionTurnCounter % player.companion.frequency === 0) {
-                    player.companion.effect(currentEnemy);
-                    updateEnemyStats();
-                }
-                if (currentEnemy.hp <= 0) {
-                    currentEnemy.hp = 0; // Ensure HP is 0 in UI
-                    updateEnemyStats();
-                    setMessage(`You defeated the ${currentEnemy.name}!`);
-                    handleEnemyDefeated();
-                    return;
+            // Enemy special abilities
+            if (currentEnemy.ability && Math.random() < currentEnemy.abilityRate) {
+                if (currentEnemy.ability === "selfHeal") {
+                    const healAmount = Math.floor(currentEnemy.maxHp * 0.10); // Heal 10% of max HP
+                    currentEnemy.hp = Math.min(currentEnemy.maxHp, currentEnemy.hp + healAmount);
+                    healMonsterSound.triggerAttackRelease("G4", "8n", Tone.now());
+                    setMessage(`${currentEnemy.name} healed itself for ${healAmount} HP!`);
+                    enemyDisplay.classList.add('spin'); // Spin animation for healing
+                    setTimeout(() => enemyDisplay.classList.remove('spin'), 500);
+                } else if (currentEnemy.ability === "debuff") {
+                    playerDebuffTurns = 2; // Debuff player attack for 2 turns
+                    debuffSound.triggerAttackRelease("C3", "8n", Tone.now());
+                    setMessage(`${currentEnemy.name} used Debuff! Your attack is halved for 2 turns!`);
+                    playerStatsDisplay.classList.add('flash'); // Flash player stats on debuff
+                    setTimeout(() => playerStatsDisplay.classList.remove('flash'), 200);
+                } else if (currentEnemy.ability === "shield") {
+                    enemyShieldTurns = 2; // Shield active for 2 turns
+                    currentEnemy.shieldActive = true;
+                    shieldSound.triggerAttackRelease(["C4", "E4", "G4"], "8n", Tone.now());
+                    setMessage(`${currentEnemy.name} activated a damage reduction shield!`);
                 }
             }
 
-            // Enemy attacks player (after a short delay for better flow)
-            setTimeout(() => {
-                if (player.hp <= 0) return;
-                if (currentEnemy.stunned) {
-                    setMessage(`${currentEnemy.name} is stunned and cannot attack!`);
-                    currentEnemy.stunned = false;
-                    setMessage("Your turn. What will you do?");
-                    skillCooldown = Math.max(0, skillCooldown - 1); // Decrease skill cooldown
-                    updatePlayerStats(); // Update skill button state after turn
-                    return; // Skip enemy attack
+            // Final Boss special abilities
+            if (currentEnemy.isFinalBoss) {
+                if (currentEnemy.immunityTurns === 0 && Math.random() < 0.3) { // 30% chance for immunity
+                    currentEnemy.immunityTurns = 2;
+                    setMessage(`The ${currentEnemy.name} is now immune to skills for 2 turns!`);
+                    enemyDisplay.classList.add('spin');
+                    setTimeout(() => enemyDisplay.classList.remove('spin'), 500);
                 }
-                if (currentEnemy.slowed) {
-                    setMessage(`${currentEnemy.name} is slowed!`);
-                    currentEnemy.slowed = false;
+                if (currentEnemy.strengthTurns === 0 && Math.random() < 0.4) { // 40% chance for strength buff
+                    currentEnemy.strengthTurns = 2;
+                    setMessage(`The ${currentEnemy.name} gains strength! Attack and Defence increased for 2 turns!`);
+                    enemyDisplay.classList.add('flash');
+                    setTimeout(() => enemyDisplay.classList.remove('flash'), 200);
                 }
-
-                const effectivePlayerDefense = player.defense + getTotalDefenseBonus();
-                let enemyDamage = Math.max(1, currentEnemy.attack - effectivePlayerDefense);
-
-                let enemyIsCritical = false;
-                if (Math.random() < currentEnemy.critChance) {
-                    enemyDamage = Math.floor(enemyDamage * 1.5);
-                    enemyIsCritical = true;
-                    criticalHitSound.triggerAttackRelease("D3", "8n");
-                    gameContainer.classList.add('shake');
-                    setTimeout(() => gameContainer.classList.remove('shake'), 300);
-                }
-
-                let finalDamage = enemyDamage;
-                let isTrueDamage = false;
-                const trueDamageChance = 0.05; // 5% chance for true damage
-                if (Math.random() < trueDamageChance) {
-                    const calculatedTrueDamage = effectivePlayerDefense; // True damage equals player's total defense
-                    if (calculatedTrueDamage > finalDamage) { // Only apply if true damage is greater than normal damage
-                        finalDamage = calculatedTrueDamage;
-                        isTrueDamage = true;
-                    }
-                }
-
-                player.hp -= finalDamage;
-                player.hp = Math.floor(player.hp); // Ensure integer HP
-
-                if (isTrueDamage) {
-                    setMessage(`💀 True Damage! ${currentEnemy.name} attacks you for ${finalDamage} damage, ignoring your defense!`);
-                } else if (enemyIsCritical) {
-                    setMessage(`💥 Critical Hit! ${currentEnemy.name} attacks you for ${finalDamage} damage!`);
-                } else {
-                    setMessage(`${currentEnemy.name} attacks you for ${finalDamage} damage!`);
-                }
-                updatePlayerStats();
-
-                if (player.hp <= 0) {
-                    setMessage("You have been defeated! Game Over.");
-                    defeatSound.triggerAttackRelease(["C3", "A2", "F2"], "1n");
-                    endGame(false); // Player defeated
-                }
-                skillCooldown = Math.max(0, skillCooldown - 1); // Decrease skill cooldown
-                updatePlayerStats(); // Update skill button state after turn
-            }, 1500); // Slightly longer delay for skill animations/messages
-        }
-
-        /**
-         * Handles using a potion during battle.
-         */
-        function usePotion() {
-            if (player.potions <= 0 || player.hp <= 0) {
-                setMessage("You have no potions left!");
-                return;
             }
 
-            potionSound.triggerAttackRelease("E5", "8n"); // Play potion sound
-            player.potions--;
-            const potionHeal = fullShopItemPool.find(item => item.name === "Healing Potion").value;
-            player.hp = Math.min(player.maxHp, Math.floor(player.hp + potionHeal)); // Ensure integer HP
-            setMessage(`You used a potion and healed ${potionHeal} HP!`);
+            let effectivePlayerDefense = player.defense + getTotalDefenseBonus();
+            let enemyAttackValue = currentEnemy.attack;
+
+            if (currentEnemy.isFinalBoss && currentEnemy.strengthTurns > 0) {
+                enemyAttackValue = Math.floor(enemyAttackValue * 1.5); // 50% increased attack for boss strength
+            }
+
+            let enemyDamage = Math.max(1, enemyAttackValue - effectivePlayerDefense);
+
+            if (currentEnemy.isFinalBoss && currentEnemy.strengthTurns > 0) {
+                // Boss defence is also increased for 2 turns with strength
+                enemyDamage = Math.max(1, enemyAttackValue - Math.floor(effectivePlayerDefense * 1.5));
+            }
+
+
+            let enemyIsCritical = false;
+            if (Math.random() < currentEnemy.critChance) {
+                enemyDamage = Math.floor(enemyDamage * 1.5);
+                enemyIsCritical = true;
+                criticalHitSound.triggerAttackRelease("D3", "8n", Tone.now());
+                gameContainer.classList.add('shake');
+                setTimeout(() => gameContainer.classList.remove('shake'), 300);
+            }
+
+            let finalDamage = enemyDamage;
+            let isTrueDamage = false;
+            const trueDamageChance = 0.05; // 5% chance for true damage
+            if (Math.random() < trueDamageChance) {
+                const calculatedTrueDamage = effectivePlayerDefense; // True damage equals player's total defense
+                if (calculatedTrueDamage > finalDamage) { // Only apply if true damage is greater than normal damage
+                    finalDamage = calculatedTrueDamage;
+                    isTrueDamage = true;
+                }
+            }
+
+            player.hp -= finalDamage;
+            player.hp = Math.floor(player.hp); // Ensure integer HP
+
+            if (isTrueDamage) {
+                setMessage(`💀 True Damage! ${currentEnemy.name} attacks you for ${finalDamage} damage, ignoring your defence!`);
+            } else if (enemyIsCritical) {
+                setMessage(`💥 Critical Hit! ${currentEnemy.name} attacks you for ${finalDamage} damage!`);
+            } else {
+                setMessage(`${currentEnemy.name} attacks you for ${finalDamage} damage!`);
+            }
             updatePlayerStats();
 
-            // Enemy still attacks after potion use
-            setTimeout(() => {
-                if (player.hp <= 0) return;
-                if (currentEnemy.stunned) {
-                    setMessage(`${currentEnemy.name} is stunned and cannot attack!`);
-                    currentEnemy.stunned = false;
-                    setMessage("Your turn. What will you do?");
-                    skillCooldown = Math.max(0, skillCooldown - 1); // Decrease skill cooldown
-                    updatePlayerStats(); // Update skill button state after turn
-                    return; // Skip enemy attack
-                }
-                if (currentEnemy.slowed) {
-                    setMessage(`${currentEnemy.name} is slowed!`);
-                    currentEnemy.slowed = false;
-                }
-
-                const effectivePlayerDefense = player.defense + getTotalDefenseBonus();
-                let enemyDamage = Math.max(1, currentEnemy.attack - effectivePlayerDefense);
-
-                let enemyIsCritical = false;
-                if (Math.random() < currentEnemy.critChance) {
-                    enemyDamage = Math.floor(enemyDamage * 1.5);
-                    enemyIsCritical = true;
-                    criticalHitSound.triggerAttackRelease("D3", "8n");
-                    gameContainer.classList.add('shake');
-                    setTimeout(() => gameContainer.classList.remove('shake'), 300);
-                }
-
-                let finalDamage = enemyDamage;
-                let isTrueDamage = false;
-                const trueDamageChance = 0.05; // 5% chance for true damage
-                if (Math.random() < trueDamageChance) {
-                    const calculatedTrueDamage = effectivePlayerDefense; // True damage equals player's total defense
-                    if (calculatedTrueDamage > finalDamage) { // Only apply if true damage is greater than normal damage
-                        finalDamage = calculatedTrueDamage;
-                        isTrueDamage = true;
-                    }
-                }
-
-                player.hp -= finalDamage;
-                player.hp = Math.floor(player.hp); // Ensure integer HP
-
-                if (isTrueDamage) {
-                    setMessage(`💀 True Damage! ${currentEnemy.name} attacks you for ${finalDamage} damage, ignoring your defense!`);
-                } else if (enemyIsCritical) {
-                    setMessage(`💥 Critical Hit! ${currentEnemy.name} attacks you for ${finalDamage} damage!`);
-                } else {
-                    setMessage(`${currentEnemy.name} attacks you for ${finalDamage} damage!`);
-                }
-                updatePlayerStats();
-
-                if (player.hp <= 0) {
-                    setMessage("You have been defeated! Game Over.");
-                    defeatSound.triggerAttackRelease(["C3", "A2", "F2"], "1n");
-                    endGame(false); // Player defeated
-                }
-                skillCooldown = Math.max(0, skillCooldown - 1); // Decrease skill cooldown
-                updatePlayerStats(); // Update skill button state after turn
-            }, 1000);
+            if (player.hp <= 0) {
+                setMessage("You have been defeated! Game Over.");
+                defeatSound.triggerAttackRelease(["C3", "A2", "F2"], "1n", Tone.now());
+                endGame(false); // Player defeated
+            }
+            skillCooldown = Math.max(0, skillCooldown - 1); // Decrease skill cooldown
+            updatePlayerStats(); // Update skill button state after turn
+            updateEnemyStats(); // Update enemy status
         }
+
 
         /**
          * Handles the outcome when an enemy is defeated.
@@ -1356,10 +1624,10 @@
             player.xp += battleRewards.xp;
             player.coins += battleRewards.coins;
 
-            // Equipment Drop (30% chance for regular, 70% for elite)
+            // Equipment Drop (only non-epic items)
             const dropChance = eliteEnemies.some(e => e.name === currentEnemy.name) ? 0.7 : 0.3; // Increased drop chances
             if (Math.random() < dropChance) {
-                const availableEquipmentDrops = fullShopItemPool.filter(item => item.type !== "heal");
+                const availableEquipmentDrops = fullShopItemPool.filter(item => !item.isEpic && item.type !== "heal"); // Only non-epic items can drop
                 if (availableEquipmentDrops.length > 0) {
                     const droppedItem = availableEquipmentDrops[Math.floor(Math.random() * availableEquipmentDrops.length)];
 
@@ -1372,12 +1640,12 @@
                         player.equippedItems.push({ // Add to equippedItems array
                             name: droppedItem.name,
                             icon: droppedItem.icon,
-                            attackBonus: droppedItem.attack || droppedItem.value || 0, // Use attack/value for attack bonus
-                            defenseBonus: droppedItem.defense || droppedItem.value || 0, // Use defense/value for defense bonus
+                            attack: droppedItem.attack || 0,
+                            defense: droppedItem.defense || 0,
                             sellValue: droppedItem.sellValue || Math.floor(droppedItem.cost / 2)
                         });
                         battleRewards.equipment.push(`${droppedItem.name} ${droppedItem.icon}`);
-                        itemSound.triggerAttackRelease(["C5", "G5"], "8n");
+                        itemSound.triggerAttackRelease(["C5", "G5"], "8n", Tone.now());
                     }
                 }
             }
@@ -1387,16 +1655,21 @@
             if (Math.random() < potionDropChance) {
                 player.potions++;
                 battleRewards.equipment.push(`Healing Potion 🧪`);
-                itemSound.triggerAttackRelease(["C6", "E6"], "8n");
+                itemSound.triggerAttackRelease(["C6", "E6"], "8n", Tone.now());
             }
 
 
-            // Check for victory if elite monster is defeated
-            if (eliteEnemies.some(e => e.name === currentEnemy.name)) {
-                setMessage("🎉 You defeated the Elite Monster! Your legend grows!");
-                victorySound.triggerAttackAttackRelease(["C5", "E5", "G5", "C6"], "2n");
-                endGame(true); // Consider defeating an elite monster as a "win" for this short game
+            // Check for victory if final boss is defeated
+            if (currentEnemy.isFinalBoss) {
+                setMessage("🎉 You defeated the Final Boss! Your legend is complete!");
+                playVictoryAnimation(); // Play victory animation
+                victorySound.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", Tone.now());
+                player.hasFoughtFinalBoss = true; // Mark final boss as fought
+                endGame(true); // Player defeated final boss
                 return;
+            } else if (eliteEnemies.some(e => e.name === currentEnemy.name)) {
+                setMessage("🎉 You defeated the Elite Monster! Your legend grows!");
+                victorySound.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", Tone.now());
             }
 
             player.encountersFought++; // Use player.encountersFought
@@ -1426,8 +1699,8 @@
                 player.hp = player.maxHp; // Fully heal on level up
                 player.attack = Math.floor(player.attack * 1.1); // Increase attack
                 player.defense = Math.floor(player.defense * 1.1); // Increase defense
-                setMessage(`🌟 You leveled up to Level ${player.level}! Your stats have increased!`);
-                levelUpSound.triggerAttackRelease(["C4", "E4", "G4"], "8n"); // Play level up sound
+                setMessage(`🌟 You levelled up to Level ${player.level}! Your stats have increased!`);
+                levelUpSound.triggerAttackRelease(["C4", "E4", "G4"], "8n", Tone.now()); // Play level up sound
                 updatePlayerStats();
             }
         }
@@ -1458,9 +1731,8 @@
          */
         function renderShopItems() {
             shopItemsContainer.innerHTML = '';
-            // Randomly select 6 unique items from the full pool
-            const shuffledItems = [...fullShopItemPool].sort(() => 0.5 - Math.random());
-            const itemsToShow = shuffledItems.slice(0, 6); // Show 6 random items
+            // Filter out epic items for shop display (only epic items should be here)
+            const itemsToShow = fullShopItemPool.filter(item => item.isEpic || item.type === "heal"); // Only epic or healing potions in shop
 
             itemsToShow.forEach(item => {
                 const itemDiv = document.createElement('div');
@@ -1490,8 +1762,8 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.classList.add('equipped-item', 'btn-secondary');
                 let effect = [];
-                if (item.attackBonus) effect.push(`Atk +${item.attackBonus}`);
-                if (item.defenseBonus) effect.push(`Def +${item.defenseBonus}`);
+                if (item.attack > 0) effect.push(`Atk +${item.attack}`);
+                if (item.defense > 0) effect.push(`Def +${item.defense}`);
                 itemDiv.innerHTML = `
                     <div class="text-3xl">${item.icon}</div>
                     <div class="equipped-item-name">${item.name}</div>
@@ -1526,7 +1798,7 @@
             }
 
             player.coins -= item.cost;
-            coinSound.triggerAttackRelease(["C5", "G5"], "8n"); // Play coin sound
+            coinSound.triggerAttackRelease(["C5", "G5"], "8n", Tone.now()); // Play coin sound
 
             if (item.type === "heal") {
                 player.potions++;
@@ -1536,8 +1808,8 @@
                 player.equippedItems.push({
                     name: item.name,
                     icon: item.icon,
-                    attackBonus: item.attack || item.value || 0,
-                    defenseBonus: item.defense || item.value || 0,
+                    attack: item.attack || 0,
+                    defense: item.defense || 0,
                     sellValue: item.sellValue || Math.floor(item.cost / 2)
                 });
                 setMessage(`You bought and equipped a ${item.name}!`);
@@ -1557,7 +1829,7 @@
             const itemToSell = player.equippedItems[index];
             player.coins += itemToSell.sellValue;
             player.equippedItems.splice(index, 1); // Remove item
-            coinSound.triggerAttackRelease(["C5", "G5"], "8n");
+            coinSound.triggerAttackRelease(["C5", "G5"], "8n", Tone.now());
             setMessage(`You sold ${itemToSell.name} for ${itemToSell.sellValue} coins!`);
             updatePlayerStats();
             renderEquippedItemsForSell(); // Re-render sell list
@@ -1622,13 +1894,13 @@
          */
         function hireCompanion(companionName) {
             const companion = companions[companionName];
-            // Check if player already has a companion OR not enough coins
+            // Check if player already has a companion
             if (player.companion) {
                 setMessage("You already have a companion. Dismiss them first if you wish to hire a new one.");
                 return;
             }
             if (!companion || player.coins < companion.cost) {
-                setMessage("Cannot hire this companion!");
+                setMessage("Cannot hire this companion! Not enough coins or invalid companion.");
                 return;
             }
 
@@ -1640,7 +1912,7 @@
                 effect: companion.effect,
                 frequency: companion.frequency
             };
-            itemSound.triggerAttackRelease(["C5", "G5"], "8n"); // Use item sound for hiring
+            itemSound.triggerAttackRelease(["C5", "G5"], "8n", Tone.now()); // Use item sound for hiring
             setMessage(`You hired a ${companion.name}! They will join your adventure.`);
             updatePlayerStats();
             returnToMainMenu();
@@ -1668,6 +1940,7 @@
             shopScreen.classList.add('hidden');
             hireScreen.classList.add('hidden');
             restartBtn.classList.add('hidden'); // Hide the restart button itself while modal is open
+            finalBossPrepModal.classList.add('hidden'); // Hide final boss prep modal if open
 
             confirmModal.classList.remove('hidden');
             setMessage("Are you sure you want to restart the game?");
@@ -1692,7 +1965,11 @@
                     showShop(); // Return to shop if it was open
                 } else if (!hireScreen.classList.contains('hidden')) {
                     showHireScreen(); // Return to hire screen if it was open
-                } else {
+                } else if (!finalBossPrepModal.classList.contains('hidden')) { // If final boss prep was open
+                    finalBossPrepModal.classList.remove('hidden');
+                    setMessage("The Final Challenge Awaits!");
+                }
+                else {
                     showMainMenu(); // Otherwise, show main menu
                 }
                 restartBtn.classList.remove('hidden'); // Always show restart button after modal closes
@@ -1723,6 +2000,35 @@
         }
 
         /**
+         * Plays a victory animation with confetti.
+         */
+        function playVictoryAnimation() {
+            const confettiContainer = document.createElement('div');
+            confettiContainer.style.position = 'fixed';
+            confettiContainer.style.top = '0';
+            confettiContainer.style.left = '0';
+            confettiContainer.style.width = '100%';
+            confettiContainer.style.height = '100%';
+            confettiContainer.style.overflow = 'hidden';
+            confettiContainer.style.pointerEvents = 'none';
+            confettiContainer.style.zIndex = '9999';
+            document.body.appendChild(confettiContainer);
+
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.animationDelay = `${Math.random() * 2}s`;
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`; // Random colours
+                confettiContainer.appendChild(confetti);
+            }
+
+            setTimeout(() => {
+                confettiContainer.remove();
+            }, 3000); // Remove confetti after 3 seconds
+        }
+
+        /**
          * Shows the game over/victory modal.
          * @param {boolean} isVictory - True if the game ended in victory.
          */
@@ -1731,16 +2037,18 @@
             battleActions.classList.add('hidden');
             enemyDisplay.classList.add('hidden');
             restartBtn.classList.add('hidden'); // Hide the regular restart button
+            finalBossPrepModal.classList.add('hidden'); // Ensure final boss prep modal is hidden
 
             gameOverModal.classList.remove('hidden');
             if (isVictory) {
                 gameOverTitle.textContent = "VICTORY ACHIEVED!";
                 gameOverMessage.textContent = "You have bravely faced and overcome the ultimate challenge, proving yourself a true hero of the realm! Your legend will be sung for ages.";
-                victorySound.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n");
+                victorySound.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", Tone.now());
+                playVictoryAnimation(); // Trigger confetti for victory
             } else {
                 gameOverTitle.textContent = "GAME OVER!";
                 gameOverMessage.textContent = "Your adventure ends here. Though defeated, your spirit remains. Rise again, hero, and forge a new destiny!";
-                defeatSound.triggerAttackRelease(["C3", "A2", "F2"], "1n");
+                defeatSound.triggerAttackRelease(["C3", "A2", "F2"], "1n", Tone.now());
             }
         }
 
@@ -1752,9 +2060,14 @@
             gameScreen.classList.add('hidden');
             gameOverModal.classList.add('hidden'); // Hide game over modal
             restartBtn.classList.add('hidden'); // Hide restart button on occupation screen
+            finalBossPrepModal.classList.add('hidden'); // Hide final boss prep modal
             // Reset player object which includes encountersFought and battlesSinceLastFromHell
             currentEnemy = null;
             player = {}; // Clear player data
+            playerDebuffTurns = 0; // Reset debuff
+            enemyShieldTurns = 0; // Reset shield
+            enemyImmunityTurns = 0; // Reset immunity
+            enemyStrengthTurns = 0; // Reset strength
             setMessage("Choose Your Path");
         }
     </script>
