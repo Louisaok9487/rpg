@@ -246,9 +246,10 @@
             .stats-grid {
                 grid-template-columns: 1fr; /* Stack stats on small screens */
             }
+            /* Adjust grid for smaller screens to ensure all buttons fit */
             .shop-items, .hire-options, .main-menu-options, .equipped-items-list {
-                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Smaller grid items */
-                gap: 0.75rem;
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); /* Allow smaller items */
+                gap: 0.5rem; /* Reduce gap */
             }
             .modal-content {
                 padding: 1.5rem;
@@ -284,13 +285,7 @@
             animation: slideIn 0.5s ease-out forwards;
         }
 
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        .spin {
-            animation: spin 1s linear infinite;
-        }
+        /* Removed @keyframes spin */
 
         @keyframes explode {
             0% { transform: scale(0); opacity: 1; }
@@ -359,6 +354,7 @@
                     <span class="text-sm text-gray-200">Multi-hit Chance, Low HP</span>
                 </button>
             </div>
+            <!-- Removed Load Game Button -->
         </div>
 
         <!-- Game Screen -->
@@ -421,6 +417,7 @@
                 <button class="btn btn-success main-menu-option" id="use-potion-out-of-battle-btn" onclick="usePotionOutOfBattle()">
                     <span class="text-xl">🧪 Potion (<span id="potion-count-main-menu">0</span>)</span>
                 </button>
+                <!-- Removed Save Game Button -->
             </div>
 
             <!-- Battle Actions -->
@@ -449,7 +446,8 @@
                 <div class="equipped-items-list" id="equipped-items-sell-container">
                     <!-- Equipped items for selling will be loaded here -->
                 </div>
-                <button class="btn btn-secondary w-full mt-4" onclick="returnToMainMenu()">Leave Shop</button>
+                <!-- Removed Save Game Button -->
+                <button class="btn btn-secondary w-full mt-2" onclick="returnToMainMenu()">Leave Shop</button>
             </div>
 
             <!-- Hire Member Screen -->
@@ -458,7 +456,8 @@
                 <div class="hire-options" id="hire-options-container">
                     <!-- Hire options will be loaded here -->
                 </div>
-                <button class="btn btn-secondary w-full" onclick="returnToMainMenu()">No Thanks</button>
+                <!-- Removed Save Game Button -->
+                <button class="btn btn-secondary w-full mt-2" onclick="returnToMainMenu()">No Thanks</button>
             </div>
 
             <!-- Confirmation Modal (for restart) -->
@@ -505,6 +504,21 @@
                     <p class="text-lg mb-4" id="game-over-message"></p>
                     <p class="text-sm text-gray-400 mt-4">A grand adventure by Louis LAN. Made with passion in New Zealand. 2025.</p>
                     <button class="btn btn-primary w-full mt-4" onclick="restartGame()">Begin a New Journey</button>
+                </div>
+            </div>
+
+            <!-- Instructions Modal -->
+            <div id="instructions-modal" class="hidden modal-overlay">
+                <div class="modal-content">
+                    <h2 class="section-title">Welcome, Adventurer!</h2>
+                    <ul class="text-left text-base space-y-2 mb-6 list-disc list-inside">
+                        <li>The Final Boss awaits you at Level 6. Do your best to defeat it!</li>
+                        <li>Visit the 🛍️ Shop to acquire potions and powerful equipment.</li>
+                        <li>Visit the 🤝 Bar to hire a loyal companion to aid you in battle.</li>
+                        <li>Engage enemies with your normal attack or a powerful skill. Remember, skills need to cool down!</li>
+                        <li>You can only carry a limited number of equipment items. Choose wisely!</li>
+                    </ul>
+                    <button class="btn btn-primary w-full" onclick="closeInstructions()">Understand</button>
                 </div>
             </div>
 
@@ -599,7 +613,7 @@
         const tier2Enemies = [
             { name: "Orc Grunt", icon: "👺", hp: 70, attack: 17, defense: 10, xp: 60, coinDrop: [15, 25] },
             { name: "Giant Spider", icon: "🕷️", hp: 65, attack: 16, defense: 9, xp: 55, coinDrop: [14, 22] },
-            { name: "Stone Golem", icon: "🪨", hp: 80, attack: 15, defense: 12, xp: 70, coinDrop: [18, 28] },
+            { name: "Stone Golem", icon: "🧌", hp: 80, attack: 15, defense: 12, xp: 70, coinDrop: [18, 28] }, // Changed icon from 🪨 to 🧌
             { name: "Dark Cultist", icon: "👤", hp: 60, attack: 20, defense: 8, xp: 65, coinDrop: [16, 26] }
         ];
 
@@ -636,13 +650,13 @@
         // Shop Items (Full pool for randomization) - Equipment values reduced
         const fullShopItemPool = [
             { name: "Iron Sword", cost: 20, type: "weapon", attack: 3, defense: 0, icon: "🗡️", description: "Attack +3", sellValue: 10, isEpic: false },
-            { name: "Leather Armour", cost: 20, type: "armour", attack: 0, defense: 3, icon: "🛡️", description: "Defence +3", sellValue: 10, isEpic: false },
+            { name: "Leather Armour", cost: 20, type: "armour", attack: 0, defense: 3, icon: "👕", description: "Defence +3", sellValue: 10, isEpic: false }, // Changed icon to 👕
             { name: "Healing Potion", cost: 15, type: "heal", value: 50, icon: "🧪", description: "Restores 50 HP", sellValue: 7, isEpic: false },
             { name: "Steel Broadsword", cost: 40, type: "weapon", attack: 5, defense: 0, icon: "⚔️", description: "Attack +5", sellValue: 20, isEpic: false },
-            { name: "Chainmail Vest", cost: 40, type: "armour", attack: 0, defense: 5, icon: "🪖", description: "Defence +5", sellValue: 20, isEpic: false },
+            { name: "Chainmail Vest", cost: 40, type: "armour", attack: 0, defense: 5, icon: "🔗", description: "Defence +5", sellValue: 20, isEpic: false }, // Changed icon to 🔗
             { name: "Amulet of Haste", cost: 50, type: "accessory", attack: 2, defense: 2, icon: "⚡", description: "Attack +2, Defence +2", sellValue: 25, isEpic: false },
             { name: "Ring of Resilience", cost: 60, type: "accessory", attack: 3, defense: 3, icon: "💍", description: "Attack +3, Defence +3", sellValue: 30, isEpic: false },
-            // Epic Items - Only purchasable in shop
+            // Epic Items - Fixed in shop
             { name: "Dragon Blade", cost: 300, type: "weapon", attack: 10, defense: 0, icon: "🐉", description: "Attack +10 (Epic)", sellValue: 150, isEpic: true },
             { name: "Aegis Shield", cost: 300, type: "armour", attack: 0, defense: 10, icon: "✨", description: "Defence +10 (Epic)", sellValue: 150, isEpic: true },
             { name: "Phoenix Amulet", cost: 200, type: "accessory", attack: 8, defense: 8, icon: "🔥", description: "Attack +8, Defence +8 (Epic)", sellValue: 100, isEpic: true }
@@ -652,41 +666,29 @@
         const companions = {
             Healer: {
                 name: "Healer", icon: "⚕️", cost: 50,
-                description: "Heals you for 10 HP every 10 turns.",
+                description: "Heals you for 20 HP every 10 turns.",
                 effect: () => {
-                    const healAmount = 10;
-                    player.hp = Math.min(player.maxHp, Math.floor(player.hp + healAmount)); // Ensure integer HP
+                    const healAmount = 20;
+                    player.hp = Math.min(player.maxHp, Math.floor(player.hp + healAmount));
                     setMessage(gameMessage.textContent + ` Your Healer companion heals you for ${healAmount} HP!`);
                     companionHealSound.triggerAttackRelease("G4", "8n", Tone.now());
                 },
-                frequency: 10 // Every 10 turns
-            },
-            DarkSlave: {
-                name: "Dark Slave", icon: "😈", cost: 60,
-                description: "Deals 10 damage to the enemy every 5 turns.",
-                effect: (target) => {
-                    const damage = 10;
-                    target.hp -= damage;
-                    target.hp = Math.floor(target.hp); // Ensure integer HP
-                    setMessage(gameMessage.textContent + ` Your Dark Slave companion attacks for ${damage} damage!`);
-                    companionAttackSound.triggerAttackRelease("C3", "8n", Tone.now());
-                },
-                frequency: 5 // Every 5 turns
+                frequency: 10
             },
             Pet: {
-                name: "Pet", icon: "🐾", cost: 40,
-                description: "Deals 5 damage and heals you for 5 HP every 8 turns.", // Changed frequency to 8
+                name: "Pet", icon: "🐾", cost: 60,
+                description: "Deals 5 damage to the enemy and heals you for 5 HP every 5 turns.",
                 effect: (target) => {
                     const damage = 5;
                     const healAmount = 5;
                     target.hp -= damage;
-                    target.hp = Math.floor(target.hp); // Ensure integer HP
-                    player.hp = Math.min(player.maxHp, Math.floor(player.hp + healAmount)); // Ensure integer HP
+                    player.hp = Math.min(player.maxHp, Math.floor(player.hp + healAmount));
+                    target.hp = Math.floor(target.hp);
                     setMessage(gameMessage.textContent + ` Your Pet companion attacks for ${damage} damage and heals you for ${healAmount} HP!`);
-                    companionAttackSound.triggerAttackRelease("E4", "8n", Tone.now());
-                    companionHealSound.triggerAttackRelease("C5", "8n", Tone.now());
+                    companionAttackSound.triggerAttackRelease("C3", "8n", Tone.now());
+                    companionHealSound.triggerAttackRelease("G4", "8n", Tone.now() + 0.1); // Slightly delayed heal sound
                 },
-                frequency: 8 // Every 8 turns
+                frequency: 5
             }
         };
 
@@ -711,6 +713,7 @@
         let confirmModal, finalBossPrepModal, battleResultModal, resultTitle, resultXp, resultCoins, resultEquipment, gameOverModal, gameOverTitle, gameOverMessage;
         let shopScreen, shopItemsContainer, equippedItemsSellContainer; // Added shop and hire screen elements
         let hireScreen, hireOptionsContainer;
+        let instructionsModal;
 
 
         window.onload = () => {
@@ -772,6 +775,7 @@
             equippedItemsSellContainer = document.getElementById('equipped-items-sell-container');
             hireScreen = document.getElementById('hire-screen');
             hireOptionsContainer = document.getElementById('hire-options-container');
+            instructionsModal = document.getElementById('instructions-modal');
 
 
             // Start audio context on first user interaction
@@ -1030,8 +1034,15 @@
             }
 
 
-            playerXpText.textContent = `${player.xp}/${player.xpToNextLevel}`;
-            playerXpBar.style.width = `${(player.xp / player.xpToNextLevel) * 100}%`;
+            // Update XP display to show "Max" at level 6
+            if (player.level === 6) {
+                playerXpText.textContent = `Max`;
+                playerXpBar.style.width = `100%`;
+            } else {
+                playerXpText.textContent = `${player.xp}/${player.xpToNextLevel}`;
+                playerXpBar.style.width = `${(player.xp / player.xpToNextLevel) * 100}%`;
+            }
+
 
             // Update skill button state based on skillCooldown
             if (player.skillName) {
@@ -1143,10 +1154,19 @@
 
             occupationScreen.classList.add('hidden');
             gameScreen.classList.remove('hidden');
-            setMessage(`Welcome, ${player.occupation}! Your adventure begins.`);
+            // Show instructions modal instead of directly showing main menu
+            instructionsModal.classList.remove('hidden');
+            setMessage(`Welcome, ${player.occupation}! Read the instructions before you begin.`);
             updatePlayerStats();
-            showMainMenu(); // Show main menu after occupation selection
             restartBtn.classList.remove('hidden'); // Show restart button
+        }
+
+        /**
+         * Closes the instructions modal and shows the main menu.
+         */
+        function closeInstructions() {
+            instructionsModal.classList.add('hidden');
+            showMainMenu();
         }
 
         /**
@@ -1182,8 +1202,8 @@
                 enemyPool = tier3Enemies;
             }
 
-            // Add special ability monsters to the pool based on player level
-            if (player.level >= 3) {
+            // Add special ability monsters to the pool based on player level (after Lv 4)
+            if (player.level >= 4) { // Changed from Lv 3 to Lv 4 as per new request
                 enemyPool = [...enemyPool, ...specialAbilityMonsters];
             }
 
@@ -1257,9 +1277,16 @@
                 currentEnemy.immunityTurns = 0;
                 currentEnemy.strengthTurns = 0;
                 setMessage(`A powerful ${currentEnemy.name} (Elite) appears! Prepare for a tough battle!`);
+                gameContainer.classList.add('flash'); // Flash screen for elite monster
+                setTimeout(() => gameContainer.classList.remove('flash'), 500);
             } else {
                 // Regular monster generation
                 currentEnemy = generateEnemy();
+                // Check if the generated enemy is a special ability monster and flash screen
+                if (specialAbilityMonsters.some(m => m.name === currentEnemy.name)) {
+                    gameContainer.classList.add('flash'); // Flash screen for special monster
+                    setTimeout(() => gameContainer.classList.remove('flash'), 500);
+                }
                 setMessage(`You encountered a ${currentEnemy.name}!`);
             }
             enemyDisplay.classList.remove('hidden');
@@ -1484,8 +1511,15 @@
             if (player.companion) {
                 player.companionTurnCounter++;
                 if (player.companionTurnCounter % player.companion.frequency === 0) {
-                    player.companion.effect(currentEnemy);
+                    // Re-attach companion effect function if it was lost during JSON.parse
+                    const companionDef = companions[player.companion.name];
+                    if (companionDef && typeof companionDef.effect === 'function') {
+                        companionDef.effect(currentEnemy);
+                    } else {
+                        console.error("Companion effect not found or not a function for:", player.companion.name);
+                    }
                     updateEnemyStats(); // Update enemy HP after companion attack
+                    updatePlayerStats(); // Update player HP after companion heal
                 }
                 if (currentEnemy.hp <= 0) { // Check if companion finished off enemy
                     currentEnemy.hp = 0; // Ensure HP is 0 in UI
@@ -1517,8 +1551,6 @@
                     currentEnemy.hp = Math.min(currentEnemy.maxHp, currentEnemy.hp + healAmount);
                     healMonsterSound.triggerAttackRelease("G4", "8n", Tone.now());
                     setMessage(`${currentEnemy.name} healed itself for ${healAmount} HP!`);
-                    enemyDisplay.classList.add('spin'); // Spin animation for healing
-                    setTimeout(() => enemyDisplay.classList.remove('spin'), 500);
                 } else if (currentEnemy.ability === "debuff") {
                     playerDebuffTurns = 2; // Debuff player attack for 2 turns
                     debuffSound.triggerAttackRelease("C3", "8n", Tone.now());
@@ -1538,8 +1570,6 @@
                 if (currentEnemy.immunityTurns === 0 && Math.random() < 0.3) { // 30% chance for immunity
                     currentEnemy.immunityTurns = 2;
                     setMessage(`The ${currentEnemy.name} is now immune to skills for 2 turns!`);
-                    enemyDisplay.classList.add('spin');
-                    setTimeout(() => enemyDisplay.classList.remove('spin'), 500);
                 }
                 if (currentEnemy.strengthTurns === 0 && Math.random() < 0.4) { // 40% chance for strength buff
                     currentEnemy.strengthTurns = 2;
@@ -1731,18 +1761,45 @@
          */
         function renderShopItems() {
             shopItemsContainer.innerHTML = '';
-            // Filter out epic items for shop display (only epic items should be here)
-            const itemsToShow = fullShopItemPool.filter(item => item.isEpic || item.type === "heal"); // Only epic or healing potions in shop
+
+            const epicItems = fullShopItemPool.filter(item => item.isEpic);
+            const normalEquipItems = fullShopItemPool.filter(item => !item.isEpic && item.type !== "heal");
+            const healingPotion = fullShopItemPool.find(item => item.name === "Healing Potion"); // Get the specific healing potion
+
+            let itemsToShow = [];
+
+            // Add the 3 fixed epic items
+            itemsToShow.push(...epicItems);
+
+            // Add the fixed healing potion
+            if (healingPotion) {
+                itemsToShow.push(healingPotion);
+            }
+
+            // Select 2 random normal equipment items
+            let shuffledNormalItems = [...normalEquipItems].sort(() => 0.5 - Math.random());
+            let randomNormalItems = [];
+            // Ensure we only pick items not currently equipped by the player
+            let availableNormalItems = shuffledNormalItems.filter(item => !player.equippedItems.some(eq => eq.name === item.name));
+
+            for (let i = 0; i < 2 && i < availableNormalItems.length; i++) {
+                randomNormalItems.push(availableNormalItems[i]);
+            }
+            itemsToShow.push(...randomNormalItems);
+
 
             itemsToShow.forEach(item => {
                 const itemDiv = document.createElement('div');
                 itemDiv.classList.add('shop-item', 'btn-secondary');
+                // Disable if not enough coins, or if it's equipment and inventory is full, or if it's equipment and already owned
+                const isDisabled = player.coins < item.cost ||
+                                   (item.type !== 'heal' && (player.equippedItems.length >= MAX_EQUIPPED_ITEMS || player.equippedItems.some(eq => eq.name === item.name)));
                 itemDiv.innerHTML = `
                     <div class="text-3xl">${item.icon}</div>
                     <div class="shop-item-name">${item.name}</div>
                     <div class="text-sm text-gray-300 mb-2">${item.description}</div>
                     <div class="shop-item-cost">Cost: ${item.cost} Coins</div>
-                    <button class="btn btn-primary mt-2 text-sm" onclick="buyItem('${item.name}')" ${player.coins < item.cost || (item.type !== 'heal' && (player.equippedItems.length >= MAX_EQUIPPED_ITEMS || player.equippedItems.some(eq => eq.name === item.name))) ? 'disabled' : ''}>Buy</button>
+                    <button class="btn btn-primary mt-2 text-sm" onclick="buyItem('${item.name}')" ${isDisabled ? 'disabled' : ''}>Buy</button>
                 `;
                 shopItemsContainer.appendChild(itemDiv);
             });
@@ -1781,8 +1838,13 @@
          */
         function buyItem(itemName) {
             const item = fullShopItemPool.find(i => i.name === itemName); // Find from full pool
-            if (!item || player.coins < item.cost) {
-                setMessage("Not enough coins!");
+            if (!item) {
+                setMessage("Item not found!");
+                return;
+            }
+
+            if (player.coins < item.cost) {
+                setMessage("Not enough coins!"); // Display message for insufficient coins
                 return;
             }
 
@@ -1897,10 +1959,14 @@
             // Check if player already has a companion
             if (player.companion) {
                 setMessage("You already have a companion. Dismiss them first if you wish to hire a new one.");
+                return; // Exit if already has companion
+            }
+            if (!companion) {
+                setMessage("Companion not found!");
                 return;
             }
-            if (!companion || player.coins < companion.cost) {
-                setMessage("Cannot hire this companion! Not enough coins or invalid companion.");
+            if (player.coins < companion.cost) {
+                setMessage("Not enough coins!"); // Display message for insufficient coins
                 return;
             }
 
@@ -1909,7 +1975,7 @@
                 name: companion.name,
                 icon: companion.icon,
                 type: companion.name.replace(/\s/g, ''),
-                effect: companion.effect,
+                // Effect function is not stored in localStorage, will be re-attached on load
                 frequency: companion.frequency
             };
             itemSound.triggerAttackRelease(["C5", "G5"], "8n", Tone.now()); // Use item sound for hiring
@@ -1941,6 +2007,7 @@
             hireScreen.classList.add('hidden');
             restartBtn.classList.add('hidden'); // Hide the restart button itself while modal is open
             finalBossPrepModal.classList.add('hidden'); // Hide final boss prep modal if open
+            instructionsModal.classList.add('hidden'); // Hide instructions modal if open
 
             confirmModal.classList.remove('hidden');
             setMessage("Are you sure you want to restart the game?");
@@ -1968,6 +2035,9 @@
                 } else if (!finalBossPrepModal.classList.contains('hidden')) { // If final boss prep was open
                     finalBossPrepModal.classList.remove('hidden');
                     setMessage("The Final Challenge Awaits!");
+                } else if (!instructionsModal.classList.contains('hidden')) { // If instructions were open
+                    instructionsModal.classList.remove('hidden');
+                    setMessage(`Welcome, ${player.occupation}! Read the instructions before you begin.`);
                 }
                 else {
                     showMainMenu(); // Otherwise, show main menu
@@ -2038,6 +2108,7 @@
             enemyDisplay.classList.add('hidden');
             restartBtn.classList.add('hidden'); // Hide the regular restart button
             finalBossPrepModal.classList.add('hidden'); // Ensure final boss prep modal is hidden
+            instructionsModal.classList.add('hidden'); // Hide instructions modal
 
             gameOverModal.classList.remove('hidden');
             if (isVictory) {
@@ -2061,6 +2132,7 @@
             gameOverModal.classList.add('hidden'); // Hide game over modal
             restartBtn.classList.add('hidden'); // Hide restart button on occupation screen
             finalBossPrepModal.classList.add('hidden'); // Hide final boss prep modal
+            instructionsModal.classList.add('hidden'); // Hide instructions modal
             // Reset player object which includes encountersFought and battlesSinceLastFromHell
             currentEnemy = null;
             player = {}; // Clear player data
@@ -2068,6 +2140,7 @@
             enemyShieldTurns = 0; // Reset shield
             enemyImmunityTurns = 0; // Reset immunity
             enemyStrengthTurns = 0; // Reset strength
+
             setMessage("Choose Your Path");
         }
     </script>
